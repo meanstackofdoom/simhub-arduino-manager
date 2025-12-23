@@ -74,6 +74,8 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
   - NumPad **9** → `Trigger Identify Blink`
   - NumPad **0** → `Trigger Test Pattern`
 
+This tool assumes you're already comfortable with basic SimHub plugins and Arduino firmware workflows.
+
 Python dependencies (see `requirements.txt`):
 
 - `Flask`
