@@ -30,6 +30,10 @@ Features may evolve rapidly as SimHub integrations are explored.
 - Clean dark / light themed UI designed for sim racing environments
 - Flask-based backend with a lightweight single-page frontend
 
+### 💄 UI Polish
+- Refined profile toolbar (select + load + save) for a more professional header layout
+- Tooltips for Identify/Test/Bulk Install actions and keyboard shortcut helper in the footer
+
 ### 🧪 Experimental
 - Keyboard-triggered SimHub Identify integration
 - Early SimHub API probing for future telemetry & health features
@@ -40,6 +44,8 @@ Features may evolve rapidly as SimHub integrations are explored.
 - Flask routing split cleanly between actions and rendering
 - Basic error handling for missing devices and malformed data
 - Safe handling of empty or invalid update requests
+- Basic environment guardrails in the header (SimHub running / plugin presence)
+- Install button hidden once a device is already marked as installed
 
 ### ⚠️ Known Limitations
 - SimHub API access is experimental and may vary by version

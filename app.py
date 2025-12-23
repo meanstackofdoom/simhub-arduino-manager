@@ -2,9 +2,44 @@ from flask import Flask, render_template, request, redirect, jsonify
 from datetime import datetime
 from pathlib import Path
 import json
+import subprocess
 import port_manager
 
 app = Flask(__name__)
+
+SIMHUB_EXE_NAMES = ["SimHubWPF.exe", "SimHub.exe"]
+SIMHUB_PLUGIN_PATHS = [
+    # Common plugin folder locations
+    Path(r"C:\Program Files (x86)\SimHub\Plugins\ArduinoIdentifyPlugin.dll"),
+    Path(r"C:\Program Files\SimHub\Plugins\ArduinoIdentifyPlugin.dll"),
+    # Some setups drop the DLL directly next to SimHub.exe
+    Path(r"C:\Program Files (x86)\SimHub\ArduinoIdentifyPlugin.dll"),
+    Path(r"C:\Program Files\SimHub\ArduinoIdentifyPlugin.dll"),
+]
+
+
+def is_simhub_running() -> bool:
+    """Best-effort check to see if a SimHub process is running (Windows-only)."""
+    try:
+        out = subprocess.check_output(["tasklist"], encoding="utf-8", errors="ignore")
+    except Exception as e:
+        print("[WARN] Unable to check SimHub process:", e)
+        return False
+
+    out = out.lower()
+    return any(name.lower() in out for name in SIMHUB_EXE_NAMES)
+
+
+def is_plugin_installed() -> bool:
+    """Check common SimHub plugin locations for the ArduinoIdentify plugin DLL."""
+    for p in SIMHUB_PLUGIN_PATHS:
+        try:
+            if p.exists():
+                return True
+        except Exception:
+            continue
+    return False
+
 
 @app.route("/")
 def index():
@@ -23,6 +58,9 @@ def index():
         "missing": 0,
         "total": len(devices),
         "last_scan": datetime.now().strftime("%H:%M:%S"),
+        # Live guardrails / environment checks
+        "simhub_running": is_simhub_running(),
+        "plugin_installed": is_plugin_installed(),
     }
 
     return render_template("index.html", devices=devices, stats=stats, profiles=profiles)
@@ -38,6 +76,12 @@ def bulk_install():
 
 @app.route("/identify/<path:key>", methods=["POST"])
 def identify(key):
+    # Guardrails: require SimHub + plugin
+    if not is_simhub_running():
+        return jsonify({"error": "SimHub does not appear to be running. Start SimHub and try again."}), 400
+    if not is_plugin_installed():
+        return jsonify({"error": "Arduino Identify plugin not found. Check your SimHub Plugins folder."}), 400
+
     print(f"[IDENTIFY] Requested identify for {key}")
     port_manager.identify_device(key, mode="identify")
     return ("", 204)
@@ -45,6 +89,12 @@ def identify(key):
 
 @app.route("/test/<path:key>", methods=["POST"])
 def test(key):
+    # Guardrails: require SimHub + plugin
+    if not is_simhub_running():
+        return jsonify({"error": "SimHub does not appear to be running. Start SimHub and try again."}), 400
+    if not is_plugin_installed():
+        return jsonify({"error": "Arduino Identify plugin not found. Check your SimHub Plugins folder."}), 400
+
     print(f"[TEST] Requested test pattern for {key}")
     port_manager.identify_device(key, mode="test")
     return ("", 204)

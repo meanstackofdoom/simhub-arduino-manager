@@ -102,6 +102,16 @@ button{
   align-items:center;
 }
 
+.toolbar-group{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 6px;
+  border-radius:8px;
+  background:linear-gradient(180deg,var(--panel),var(--panel-alt));
+  border:1px solid var(--border);
+}
+
 .tooltip{
   position:relative;
   display:inline-block;
@@ -151,6 +161,11 @@ button{
   background:#0f0f0f;color:var(--text);
   border:1px solid var(--border)
 }
+.field-help{
+  font-size:11px;
+  color:var(--muted);
+  margin:-6px 0 8px;
+}
 </style>
 </head>
 
@@ -165,22 +180,31 @@ button{
     </div>
   </div>
   <div class="stats">
-    <form method="post" action="/profile/load" style="display:flex;align-items:center;gap:6px;margin-right:10px;">
-      <select name="name" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;">
-        <option value="">Profiles…</option>
+    <form method="post" action="/profile/load" class="toolbar-group" style="margin-right:8px;">
+      <span style="font-size:11px;color:var(--muted);padding:0 4px;">Profile</span>
+      <select name="name" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;min-width:140px;">
+        <option value="">Select profile…</option>
         {% for p in profiles %}
           <option value="{{ p }}">{{ p }}</option>
         {% endfor %}
       </select>
-      <button type="submit" style="background:#444;color:white;border-radius:6px;padding:4px 8px;font-size:12px;">Load</button>
+      <button type="submit" style="background:#444;color:white;border-radius:6px;padding:4px 10px;font-size:12px;">Load</button>
     </form>
-    <form method="post" action="/profile/save" style="display:flex;align-items:center;gap:6px;margin-right:10px;">
-      <input name="name" placeholder="Save as profile…" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:130px;">
-      <button type="submit" style="background:#555;color:white;border-radius:6px;padding:4px 8px;font-size:12px;">Save</button>
+    <form method="post" action="/profile/save" class="toolbar-group" style="margin-right:8px;">
+      <input name="name" placeholder="New profile name…" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:150px;">
+      <button type="submit" style="background:#555;color:white;border-radius:6px;padding:4px 10px;font-size:12px;">Save</button>
     </form>
     <button class="btn-install" onclick="bulkInstall()" style="margin-right: 10px;" title="Assign IDs to all devices which don't yet have one">Bulk Install All</button>
     <div class="stat ok">🟢 {{ stats.connected }} Online</div>
     <div class="stat bad">🔴 {{ stats.missing }} Offline</div>
+    <div class="stat {{ 'ok' if stats.simhub_running else 'bad' }}"
+         title="Checks if a SimHub process is running on this PC">
+      {{ 'SimHub Running' if stats.simhub_running else 'SimHub Not Running' }}
+    </div>
+    <div class="stat {{ 'ok' if stats.plugin_installed else 'bad' }}"
+         title="Looks for ArduinoIdentifyPlugin.dll in common SimHub plugin folders">
+      {{ 'Plugin Found' if stats.plugin_installed else 'Plugin Missing' }}
+    </div>
   </div>
 </header>
 
@@ -339,6 +363,17 @@ button{
       Built with Python, Flask, pyserial, and a SimHub C# plugin so you can manage
       multiple rigs and Arduinos without fighting COM ports.
     </p>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:8px;">
+      <strong>No guardrails yet:</strong> there are currently no warning states if:
+    </p>
+    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:4px;">
+      <li>SimHub is not running</li>
+      <li>the Arduino Identify plugin is missing or disabled</li>
+      <li>the NumPad 9 / NumPad 0 hotkeys are not bound to the plugin actions</li>
+    </ul>
+    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
+      The UI will still look fine, but Identify/Test will silently do nothing until those are configured.
+    </p>
     <div style="display:flex;justify-content:flex-end;margin-top:10px;">
       <button type="button"
               onclick="closeAbout()"
@@ -414,7 +449,13 @@ button{
   </h2>
   <input type="hidden" name="key" id="m-key">
   <input name="name" id="m-name" placeholder="Device name (e.g. Desk LEDs)">
+  <div class="field-help">
+    Friendly name shown as the card title (e.g. <em>Under Monitor</em>, <em>Wheel Base</em>).
+  </div>
   <input name="tags" id="m-tags" placeholder="Tags (desk, dash, left)">
+  <div class="field-help">
+    Comma-separated labels used for filtering/search (e.g. <em>desk, dash, left</em>).
+  </div>
   <select name="role" id="m-role">
     <option value="Unassigned">Unassigned</option>
     <option value="LED">LED</option>
@@ -422,13 +463,22 @@ button{
     <option value="Buttons">Buttons</option>
     <option value="Other">Other</option>
   </select>
+  <div class="field-help">
+    How this Arduino is used in SimHub (LED strip, gauge, buttons, other).
+  </div>
   <select name="channel" id="m-channel">
     <option value="0">Channel 0 – All</option>
     <option value="1">Channel 1 – Left</option>
     <option value="2">Channel 2 – Right</option>
     <option value="3">Channel 3 – Dash</option>
   </select>
+  <div class="field-help">
+    Logical zone your firmware uses. <strong>0</strong> = whole device, other channels = per-zone effects.
+  </div>
   <input name="group" id="m-group" placeholder="Group (Desk, Wheel, Rig)">
+  <div class="field-help">
+    High-level rig location to help group devices (Desk, Wheel, Rig, Dash, etc.).
+  </div>
   <div style="display:flex;gap:10px">
     <button type="button"
             style="background:#444;flex:1"
@@ -472,6 +522,16 @@ function identify(btn,key,id){
   btn.innerText = `Blinking ID ${id}…`;
 
   fetch(`/identify/${key}`, { method: "POST" })
+    .then(r => {
+      if (!r.ok) {
+        return r.json().then(data => {
+          alert(data.error || "Identify failed. Check SimHub and plugin status.");
+        });
+      }
+    })
+    .catch(() => {
+      alert("Identify failed. Check SimHub and plugin status.");
+    })
     .finally(() => {
       setTimeout(() => {
         btn.classList.remove("active");
@@ -487,7 +547,17 @@ function testDevice(key,id){
     return;
   }
 
-  fetch(`/test/${key}`, { method: "POST" });
+  fetch(`/test/${key}`, { method: "POST" })
+    .then(r => {
+      if (!r.ok) {
+        return r.json().then(data => {
+          alert(data.error || "Test pattern failed. Check SimHub and plugin status.");
+        });
+      }
+    })
+    .catch(() => {
+      alert("Test pattern failed. Check SimHub and plugin status.");
+    });
 }
 
 function openModal(k,n,t,r,ch,g){
