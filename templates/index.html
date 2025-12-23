@@ -364,15 +364,12 @@ button{
       multiple rigs and Arduinos without fighting COM ports.
     </p>
     <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:8px;">
-      <strong>No guardrails yet:</strong> there are currently no warning states if:
+      <strong>Basic guardrails:</strong> the header shows whether SimHub is running and if the Arduino Identify plugin DLL is found.
+      Identify / Test will also report a clear error if either of those is missing.
     </p>
-    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:4px;">
-      <li>SimHub is not running</li>
-      <li>the Arduino Identify plugin is missing or disabled</li>
-      <li>the NumPad 9 / NumPad 0 hotkeys are not bound to the plugin actions</li>
-    </ul>
     <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
-      The UI will still look fine, but Identify/Test will silently do nothing until those are configured.
+      NumPad 9 / NumPad 0 hotkey bindings still can't be auto-detected, so if they aren't mapped to the plugin actions
+      Identify / Test may do nothing even though the header badges look OK.
     </p>
     <div style="display:flex;justify-content:flex-end;margin-top:10px;">
       <button type="button"
