@@ -32,6 +32,24 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
 
 ---
 
+## 🖼 UI Preview
+
+> Dark theme – Arduino Port Manager showing device cards, edit flow, and identify/test state.
+
+**Main dashboard**
+
+![Main dashboard](docs/website.png)
+
+**Edit device modal**
+
+![Edit device modal](docs/edit.png)
+
+**Identify / Blink state**
+
+![Identify / Blink](docs/BLINKING.png)
+
+---
+
 ## 🧱 Architecture
 
 - `app.py` – Flask app, routes, profile handling, and update logic.
