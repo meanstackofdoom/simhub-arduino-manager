@@ -217,5 +217,13 @@ def make_device_key(port):
         if sn_match:
             sn = sn_match.group(1)
 
+    # Many CH340 clones ship without a real serial number; they all look identical.
+    # In that case we suffix the COM port so each physical device gets its own key.
+    if sn == "UNKNOWN":
+        try:
+            sn = f"NO-SN-{port.device}"
+        except Exception:
+            pass
+
     return f"USB:VID={vid}:PID={pid}:SN={sn}"
 

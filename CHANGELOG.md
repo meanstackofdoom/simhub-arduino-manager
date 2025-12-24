@@ -33,6 +33,7 @@ Features may evolve rapidly as SimHub integrations are explored.
 ### 💄 UI Polish
 - Refined profile toolbar (select + load + save) for a more professional header layout
 - Tooltips for Identify/Test/Bulk Install actions and keyboard shortcut helper in the footer
+ - Device Settings modal now explains each field inline
 
 ### 🧪 Experimental
 - Keyboard-triggered SimHub Identify integration
@@ -46,6 +47,8 @@ Features may evolve rapidly as SimHub integrations are explored.
 - Safe handling of empty or invalid update requests
 - Basic environment guardrails in the header (SimHub running / plugin presence)
 - Install button hidden once a device is already marked as installed
+- More robust device keys for CH340-style Arduinos with no serial (fallback to COM-based key)
+- Gauge-role devices are marked as SimHub-driven and no longer expose Identify/Test controls
 
 ### ⚠️ Known Limitations
 - SimHub API access is experimental and may vary by version

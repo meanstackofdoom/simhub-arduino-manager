@@ -284,17 +284,28 @@ button{
       </button>
       {% endif %}
 
-      <button class="btn-identify"
-              title="Short identify blink using NumPad 9 in SimHub"
-              onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">
-        Identify
-      </button>
+      {% if d.role == 'Gauge' %}
+        <button class="btn-identify" style="opacity:.4;cursor:default;" disabled
+                title="This device is driven directly by SimHub gauges and is not controllable from this manager.">
+          Identify
+        </button>
+        <button class="btn-test" style="opacity:.4;cursor:default;" disabled
+                title="This device is driven directly by SimHub gauges and is not controllable from this manager.">
+          Test
+        </button>
+      {% else %}
+        <button class="btn-identify"
+                title="Short identify blink using NumPad 9 in SimHub"
+                onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">
+          Identify
+        </button>
 
-      <button class="btn-test"
-              title="Longer test pattern using NumPad 0 in SimHub"
-              onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">
-        Test
-      </button>
+        <button class="btn-test"
+                title="Longer test pattern using NumPad 0 in SimHub"
+                onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">
+          Test
+        </button>
+      {% endif %}
 
       <button class="btn-edit"
               onclick="openModal(
@@ -309,7 +320,8 @@ button{
       </button>
     </div>
   </div>
-</div>
+  </div>
+{% endfor %}
 </div>
 
 <div class="footer">
@@ -437,8 +449,6 @@ button{
       </button>
     </div>
   </div>
-</div>
-{% endfor %}
 </div>
 
 <div class="modal" id="modal">
