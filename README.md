@@ -61,9 +61,9 @@ and a fast UI to identify, test, and organize them without fighting COM ports.
 
 ![Edit device modal](docs/edit.png)
 
-**Identify / Blink state**
+**Device card detail**
 
-![Identify / Blink](docs/BLINKING.png)
+![Device card](docs/device.png)
 
 ---
 
