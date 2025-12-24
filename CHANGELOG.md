@@ -7,7 +7,7 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ---
 
-## [0.2.0] – SimHub Config Integration
+## [0.2.0] – SimHub Config Integration & UI Redesign
 **2025-12-24**
 
 ### ✨ Added
@@ -23,12 +23,28 @@ Features may evolve rapidly as SimHub integrations are explored.
 - New **SimHub Link** dropdown in the Edit modal to associate devices
 - Visual indicator on cards showing linked SimHub devices with a green "SIMHUB LINKED" badge
 - Warning indicator when a SimHub UID is set but the device isn't found in SimHub config
+- **Active Profiles Banner**: Shows currently active RGB LEDs and Matrix profiles with brightness %
+- **COM Port Status**: Shows if port is whitelisted/blacklisted in SimHub
+
+### 🎨 UI Redesign
+- Complete visual overhaul with professional dark theme
+- New color palette with better contrast (#22c55e accent, deeper blacks)
+- Status pills in header (Online count, SimHub, Plugin)
+- Tag-based card metadata (COM port, ID, Role as colored pills)
+- Hardware info displayed in clean 2-column grid
+- Cleaner SimHub Linked boxes with SVG link icon
+- Improved footer with grouped buttons
+- Better search box with magnifying glass icon
 
 ### 🛠️ Internal
 - Added `load_simhub_devices()` function to parse SimHub's MultipleArduinoSettings
+- Added `load_simhub_port_lists()` to read whitelist/blacklist from SimHub
+- Added `load_simhub_profiles()` to read active LED profiles from SimHub
+- Added `get_port_status()` helper for port status indicators
 - Added `get_simhub_devices()` helper for UI dropdowns
 - SimHub device cache refreshed on each port scan
 - New `simhub_uid` field in device configuration for persistent linking
+- Flask template auto-reload enabled for development
 
 ---
 

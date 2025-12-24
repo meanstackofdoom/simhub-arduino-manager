@@ -6,168 +6,262 @@
 
 <style>
 :root{
-  --panel:#151515;--panel-alt:#1d1d1d;--border:#2a2a2a;
-  --text:#eaeaea;--muted:#9aa0a6;
-  --accent:#4caf50;--danger:#ff4c4c;--info:#2196F3;
+  --panel:#0d0d0d;--panel-alt:#141414;--panel-elevated:#1a1a1a;
+  --border:#252525;--border-subtle:#1f1f1f;
+  --text:#f0f0f0;--text-secondary:#b0b0b0;--muted:#707070;
+  --accent:#22c55e;--accent-dim:rgba(34,197,94,0.15);
+  --danger:#ef4444;--danger-dim:rgba(239,68,68,0.15);
+  --info:#3b82f6;--info-dim:rgba(59,130,246,0.15);
+  --warning:#f59e0b;--warning-dim:rgba(245,158,11,0.15);
 }
 
 body[data-theme="light"]{
-  --panel:#f5f5f5;--panel-alt:#ffffff;--border:#d0d0d0;
-  --text:#111111;--muted:#60646c;
-  --accent:#1976d2;--danger:#d32f2f;--info:#1565c0;
-  background:radial-gradient(circle at top,#fafafa,#e0e0e0);
-  color:var(--text);
+  --panel:#f8f9fa;--panel-alt:#ffffff;--panel-elevated:#ffffff;
+  --border:#e5e7eb;--border-subtle:#f0f0f0;
+  --text:#111827;--text-secondary:#4b5563;--muted:#9ca3af;
+  --accent:#059669;--accent-dim:rgba(5,150,105,0.1);
+  --danger:#dc2626;--danger-dim:rgba(220,38,38,0.1);
+  --info:#2563eb;--info-dim:rgba(37,99,235,0.1);
+  --warning:#d97706;--warning-dim:rgba(217,119,6,0.1);
+  background:linear-gradient(135deg,#f5f7fa 0%,#e4e8ed 100%);
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;margin:0;padding:0}
 body{
-  margin:0;padding:24px;
-  background:radial-gradient(circle at top,#111,#050505);
-  color:var(--text);font-family:"Segoe UI",system-ui;
+  padding:20px 24px;
+  background:#080808;
+  color:var(--text);
+  font-family:"Inter",-apple-system,"Segoe UI",sans-serif;
   display:flex;flex-direction:column;min-height:100vh;
+  line-height:1.5;
 }
+
+/* Header */
 header{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:20px
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:20px;gap:16px;flex-wrap:wrap;
 }
-h1{margin:0;color:var(--accent);font-size:24px}
-.stats{display:flex;gap:10px}
-.stat{
-  padding:6px 16px;border-radius:8px;
-  border:1px solid var(--border);font-size:13px;
-  background:var(--panel)
+.header-left h1{
+  font-size:22px;font-weight:700;color:var(--accent);
+  letter-spacing:-0.5px;margin-bottom:2px;
 }
-.stat.ok{border-color:var(--accent);color:#9eff9e}
-.stat.bad{border-color:var(--danger);color:#ff9e9e}
+.header-left .subtitle{font-size:12px;color:var(--muted);}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 
-.search input{
-  width:100%;padding:12px;border-radius:8px;
-  border:1px solid var(--border);
-  background:#0f0f0f;color:var(--text);
-  margin-bottom:20px
+/* Status pills */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;
+  background:var(--panel-elevated);border:1px solid var(--border);
+}
+.pill.ok{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.pill.bad{background:var(--danger-dim);border-color:var(--danger);color:var(--danger);}
+.pill.warn{background:var(--warning-dim);border-color:var(--warning);color:var(--warning);}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* Toolbar */
+.toolbar{
+  display:flex;gap:8px;padding:12px 16px;margin-bottom:16px;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  align-items:center;flex-wrap:wrap;
+}
+.toolbar-section{display:flex;align-items:center;gap:6px;}
+.toolbar-divider{width:1px;height:24px;background:var(--border);margin:0 8px;}
+.toolbar label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.toolbar select,.toolbar input[type="text"]{
+  background:var(--panel-alt);color:var(--text);
+  border:1px solid var(--border);border-radius:6px;
+  padding:6px 10px;font-size:12px;min-width:140px;
+}
+.toolbar button{
+  background:var(--panel-elevated);color:var(--text);
+  border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;font-size:11px;font-weight:500;cursor:pointer;
+  transition:all .15s ease;
+}
+.toolbar button:hover{background:var(--border);border-color:var(--text-secondary);}
+.toolbar button.primary{background:var(--accent);color:#000;border-color:var(--accent);}
+.toolbar button.primary:hover{filter:brightness(1.1);}
+
+/* Search */
+.search-box{
+  position:relative;margin-bottom:16px;
+}
+.search-box input{
+  width:100%;padding:10px 14px 10px 36px;border-radius:8px;
+  border:1px solid var(--border);background:var(--panel);
+  color:var(--text);font-size:13px;
+}
+.search-box::before{
+  content:"⌕";position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);color:var(--muted);font-size:14px;
 }
 
+/* Grid */
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
-  gap:15px
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  gap:12px;
 }
+
+/* Card */
 .card{
-  background:linear-gradient(180deg,var(--panel),var(--panel-alt));
+  background:var(--panel);
   border:1px solid var(--border);
-  border-radius:10px;padding:15px
+  border-radius:12px;
+  overflow:hidden;
+  transition:border-color .2s ease,box-shadow .2s ease;
 }
-.card-header{
-  display:flex;justify-content:space-between
+.card:hover{border-color:var(--border-subtle);box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+
+.card-top{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:14px 16px 10px;border-bottom:1px solid var(--border-subtle);
 }
-.card-port{
-  color:var(--accent);
-  font-family:monospace;
-  font-weight:bold
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;}
+.card-tag{
+  font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;
+  background:var(--panel-elevated);color:var(--text-secondary);
+  border:1px solid var(--border-subtle);
 }
-.badge{
-  font-size:9px;padding:2px 6px;
-  border-radius:4px;text-transform:uppercase
+.card-tag.id{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
+.card-tag.port{font-family:"JetBrains Mono",monospace;background:var(--info-dim);color:var(--info);border-color:var(--info);}
+.card-tag.role{background:var(--panel-elevated);color:var(--text-secondary);}
+
+.card-status{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;
 }
-.actions{
-  display:flex;justify-content:space-between;
-  align-items:center;margin-top:10px;
-  border-top:1px solid var(--border);
-  padding-top:10px
+.status-badge{
+  font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.3px;
 }
+.status-badge.connected{background:var(--accent-dim);color:var(--accent);}
+.status-badge.missing{background:var(--danger-dim);color:var(--danger);}
+.port-status{font-size:9px;color:var(--muted);}
+.port-status.whitelisted{color:var(--accent);}
+.port-status.blacklisted{color:var(--danger);}
+
+.card-body{padding:12px 16px;}
+
+.hw-info{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;
+  font-size:11px;color:var(--text-secondary);
+  padding:8px 10px;background:var(--panel-alt);border-radius:6px;
+  margin-bottom:10px;
+}
+.hw-info span{display:flex;align-items:center;gap:4px;}
+.hw-info .label{color:var(--muted);font-size:10px;}
+
+.simhub-box{
+  padding:10px 12px;border-radius:8px;margin-bottom:10px;
+  border:1px solid var(--accent);background:var(--accent-dim);
+}
+.simhub-box.error{border-color:var(--danger);background:var(--danger-dim);}
+.simhub-header{
+  display:flex;align-items:center;gap:6px;margin-bottom:6px;
+  font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.5px;color:var(--accent);
+}
+.simhub-box.error .simhub-header{color:var(--danger);}
+.simhub-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:11px;
+}
+.simhub-grid span{color:var(--text-secondary);}
+.simhub-grid strong{color:var(--text);font-weight:500;}
+.simhub-uid{font-size:9px;color:var(--muted);margin-top:6px;word-break:break-all;}
+
+.connection-time{font-size:10px;color:var(--muted);margin-bottom:8px;}
+
+/* Actions */
+.card-actions{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 16px;background:var(--panel-alt);
+  border-top:1px solid var(--border-subtle);
+}
+.card-actions .left{font-size:10px;color:var(--muted);}
+.card-actions .right{display:flex;gap:6px;}
+
 button{
-  border:none;padding:6px 12px;
-  border-radius:4px;font-weight:600;
-  cursor:pointer;font-size:12px
+  border:none;padding:6px 12px;border-radius:5px;
+  font-weight:500;cursor:pointer;font-size:11px;
+  transition:all .15s ease;
 }
-.btn-install{background:var(--info);color:white}
-.btn-identify{background:#333;color:white;margin-left:5px}
-.btn-identify.active{
-  background:var(--danger);
-  animation:pulse .6s infinite
-}
-.btn-edit{background:var(--accent);color:#000;margin-left:5px}
-.btn-test{background:#555;color:white;margin-left:5px}
+.btn-install{background:var(--info);color:white;}
+.btn-install:hover{filter:brightness(1.15);}
+.btn-identify{background:var(--panel-elevated);color:var(--text);border:1px solid var(--border);}
+.btn-identify:hover{background:var(--border);}
+.btn-identify.active{background:var(--danger);color:white;border-color:var(--danger);animation:pulse .6s infinite;}
+.btn-test{background:var(--panel-elevated);color:var(--text);border:1px solid var(--border);}
+.btn-test:hover{background:var(--border);}
+.btn-edit{background:var(--accent);color:#000;font-weight:600;}
+.btn-edit:hover{filter:brightness(1.1);}
 
-.main{
-  flex:1 0 auto;
-}
+/* Footer */
+.main{flex:1 0 auto;}
 .footer{
-  margin-top:auto;
-  padding-top:10px;
+  margin-top:24px;padding:16px 0;
   border-top:1px solid var(--border);
-  font-size:11px;
-  color:var(--muted);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  font-size:11px;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;
 }
+.footer a{color:var(--accent);text-decoration:none;}
+.footer a:hover{text-decoration:underline;}
+.footer-btns{display:flex;gap:4px;}
+.footer-btn{
+  background:var(--panel-elevated);color:var(--text-secondary);
+  border:1px solid var(--border);border-radius:5px;
+  padding:4px 10px;font-size:10px;cursor:pointer;
+}
+.footer-btn:hover{background:var(--border);color:var(--text);}
 
-.toolbar-group{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  padding:4px 6px;
-  border-radius:8px;
-  background:linear-gradient(180deg,var(--panel),var(--panel-alt));
-  border:1px solid var(--border);
-}
-
-.tooltip{
-  position:relative;
-  display:inline-block;
-}
+/* Tooltip */
+.tooltip{position:relative;display:inline-block;}
 .tooltip-bubble{
-  position:absolute;
-  bottom:130%;
-  right:0;
-  background:var(--panel-alt);
-  color:var(--text);
-  padding:6px 8px;
-  border-radius:4px;
-  border:1px solid var(--border);
-  white-space:nowrap;
-  font-size:10px;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(4px);
-  transition:opacity .15s ease,transform .15s ease;
-  z-index:200;
+  position:absolute;bottom:130%;right:0;
+  background:var(--panel-elevated);color:var(--text);
+  padding:8px 10px;border-radius:6px;border:1px solid var(--border);
+  white-space:nowrap;font-size:10px;
+  opacity:0;pointer-events:none;
+  transform:translateY(4px);transition:all .15s ease;z-index:200;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
-.tooltip:hover .tooltip-bubble{
-  opacity:1;
-  transform:translateY(0);
-}
+.tooltip:hover .tooltip-bubble{opacity:1;transform:translateY(0);}
 
-@keyframes pulse{
-  0%{opacity:1}50%{opacity:.5}100%{opacity:1}
-}
+@keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
 
+/* Modal */
 .modal{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.8);
-  display:none;align-items:center;
-  justify-content:center;z-index:100
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;z-index:100;
+  backdrop-filter:blur(4px);
 }
 .modal.open{display:flex}
 .modal-box{
-  background:var(--panel);
-  padding:20px;border-radius:10px;
-  border:1px solid var(--border);
-  width:350px;
-  max-height:85vh;
-  overflow-y:auto;
+  background:var(--panel);padding:24px;border-radius:12px;
+  border:1px solid var(--border);width:380px;
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 20px 40px rgba(0,0,0,0.5);
 }
-.modal-box input,select{
-  width:100%;margin-bottom:10px;
-  padding:8px;border-radius:4px;
-  background:#0f0f0f;color:var(--text);
-  border:1px solid var(--border)
+.modal-box h2{font-size:18px;font-weight:600;color:var(--accent);margin-bottom:16px;}
+.modal-box input,.modal-box select{
+  width:100%;margin-bottom:8px;padding:10px 12px;border-radius:6px;
+  background:var(--panel-alt);color:var(--text);border:1px solid var(--border);
+  font-size:13px;
 }
-.field-help{
+.modal-box input:focus,.modal-box select:focus{outline:none;border-color:var(--accent);}
+.field-help{font-size:10px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;}
+
+/* Active Profiles Banner */
+.profiles-banner{
+  display:flex;gap:16px;padding:10px 16px;margin-bottom:16px;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
   font-size:11px;
-  color:var(--muted);
-  margin:-6px 0 8px;
 }
+.profile-item{display:flex;align-items:center;gap:6px;}
+.profile-item .label{color:var(--muted);text-transform:uppercase;font-size:9px;letter-spacing:0.5px;}
+.profile-item .value{color:var(--text);font-weight:500;}
+.profile-item .brightness{color:var(--warning);font-size:10px;}
 </style>
 </head>
 
@@ -175,234 +269,205 @@ button{
 
 <div class="main">
 <header>
-  <div>
+  <div class="header-left">
     <h1>Arduino Port Manager</h1>
-    <div style="font-size:12px;color:var(--muted)">
-      SimHub Device Registry
-    </div>
+    <div class="subtitle">SimHub Device Registry & Identifier</div>
   </div>
-  <div class="stats">
-    <form method="post" action="/profile/load" class="toolbar-group" style="margin-right:8px;">
-      <span style="font-size:11px;color:var(--muted);padding:0 4px;">Profile</span>
-      <select name="name" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;min-width:140px;">
-        <option value="">Select profile…</option>
-        {% for p in profiles %}
-          <option value="{{ p }}">{{ p }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit" style="background:#444;color:white;border-radius:6px;padding:4px 10px;font-size:12px;">Load</button>
-    </form>
-    <form method="post" action="/profile/save" class="toolbar-group" style="margin-right:8px;">
-      <input name="name" placeholder="New profile name…" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;width:150px;">
-      <button type="submit" style="background:#555;color:white;border-radius:6px;padding:4px 10px;font-size:12px;">Save</button>
-    </form>
-    <button class="btn-install" onclick="bulkInstall()" style="margin-right: 10px;" title="Assign IDs to all devices which don't yet have one">Bulk Install All</button>
-    <div class="stat ok">🟢 {{ stats.connected }} Online</div>
-    <div class="stat bad">🔴 {{ stats.missing }} Offline</div>
-    <div class="stat {{ 'ok' if stats.simhub_running else 'bad' }}"
-         title="Checks if a SimHub process is running on this PC">
-      {{ 'SimHub Running' if stats.simhub_running else 'SimHub Not Running' }}
+  <div class="header-right">
+    <div class="pill ok"><span class="dot"></span>{{ stats.connected }} Online</div>
+    {% if stats.missing > 0 %}
+    <div class="pill bad"><span class="dot"></span>{{ stats.missing }} Offline</div>
+    {% endif %}
+    <div class="pill {{ 'ok' if stats.simhub_running else 'bad' }}" title="SimHub process status">
+      <span class="dot"></span>{{ 'SimHub' if stats.simhub_running else 'No SimHub' }}
     </div>
-    <div class="stat {{ 'ok' if stats.plugin_installed else 'bad' }}"
-         title="Looks for ArduinoIdentifyPlugin.dll in common SimHub plugin folders">
-      {{ 'Plugin Found' if stats.plugin_installed else 'Plugin Missing' }}
+    <div class="pill {{ 'ok' if stats.plugin_installed else 'bad' }}" title="ArduinoIdentifyPlugin.dll">
+      <span class="dot"></span>{{ 'Plugin OK' if stats.plugin_installed else 'No Plugin' }}
     </div>
   </div>
 </header>
 
-<div class="search">
-  <input placeholder="Filter devices…" oninput="filterCards(this.value)">
+<div class="toolbar">
+  <div class="toolbar-section">
+    <label>Profile</label>
+    <form method="post" action="/profile/load" style="display:flex;gap:6px;align-items:center;">
+      <select name="name">
+        <option value="">Select…</option>
+        {% for p in profiles %}
+          <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Load</button>
+    </form>
+  </div>
+  <div class="toolbar-section">
+    <form method="post" action="/profile/save" style="display:flex;gap:6px;align-items:center;">
+      <input type="text" name="name" placeholder="Profile name…" style="width:130px;">
+      <button type="submit">Save</button>
+    </form>
+  </div>
+  <div class="toolbar-divider"></div>
+  <button class="primary" onclick="bulkInstall()" title="Assign IDs to all uninstalled devices">Bulk Install</button>
+</div>
+
+{% if stats.active_profiles %}
+<div class="profiles-banner">
+  {% if stats.active_profiles.rgb_leds %}
+  <div class="profile-item">
+    <span class="label">RGB LEDs</span>
+    <span class="value">{{ stats.active_profiles.rgb_leds.name }}</span>
+    <span class="brightness">{{ stats.active_profiles.rgb_leds.brightness|int }}%</span>
+  </div>
+  {% endif %}
+  {% if stats.active_profiles.rgb_matrix %}
+  <div class="profile-item">
+    <span class="label">Matrix</span>
+    <span class="value">{{ stats.active_profiles.rgb_matrix.name }}</span>
+    <span class="brightness">{{ stats.active_profiles.rgb_matrix.brightness|int }}%</span>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="search-box">
+  <input placeholder="Filter devices by name, port, role…" oninput="filterCards(this.value)">
 </div>
 
 <div class="grid">
 {% for d in devices %}
-  <div class="card"
-     data-search="{{ d.name }} {{ d.port }} {{ d.role }} {{ d.identify_id }} {{ d.channel }}">
+  <div class="card" data-search="{{ d.name }} {{ d.port }} {{ d.role }} {{ d.identify_id }} {{ d.channel }} {{ d.group }}">
 
-  <div class="card-header">
-    <div>
-      <strong style="font-size:16px">
-        {{ d.name if d.name else 'Unnamed Arduino' }}
-      </strong>
-
-      {% if d.role and d.role != 'Unassigned' %}
-        <div style="font-size:11px;color:#9aa0a6;margin-top:2px">
-          {{ d.role }}
+    <div class="card-top">
+      <div>
+        <div class="card-title">{{ d.name if d.name else 'Unnamed Arduino' }}</div>
+        <div class="card-meta">
+          <span class="card-tag port">{{ d.port }}</span>
+          {% if d.identify_id %}
+          <span class="card-tag id">ID {{ d.identify_id }}</span>
+          {% endif %}
+          {% if d.role and d.role != 'Unassigned' %}
+          <span class="card-tag role">{{ d.role }}</span>
+          {% endif %}
+          {% if d.channel and d.channel != 0 %}
+          <span class="card-tag">CH{{ d.channel }}</span>
+          {% endif %}
         </div>
+      </div>
+      <div class="card-status">
+        <span class="status-badge {{ 'connected' if d.status=='connected' else 'missing' }}">
+          {{ d.status }}
+        </span>
+        {% if d.port_status and d.port_status != 'unlisted' %}
+        <span class="port-status {{ d.port_status }}">
+          {{ '✓ Whitelisted' if d.port_status == 'whitelisted' else '✗ Blacklisted' }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card-body">
+      {% if d.description or d.manufacturer or d.vid or d.pid %}
+      <div class="hw-info">
+        {% if d.description %}
+        <span><span class="label">Device</span> {{ d.description }}</span>
+        {% endif %}
+        {% if d.manufacturer %}
+        <span><span class="label">Maker</span> {{ d.manufacturer }}</span>
+        {% endif %}
+        {% if d.vid or d.pid %}
+        <span><span class="label">USB</span> {{ d.vid or '----' }}:{{ d.pid or '----' }}</span>
+        {% endif %}
+        {% if d.connected_for %}
+        <span><span class="label">Uptime</span> {{ d.connected_for }}</span>
+        {% endif %}
+      </div>
       {% endif %}
 
-      {% if d.channel is not none and d.channel != 0 %}
-        <div style="font-size:11px;color:var(--muted)">
-          Channel {{ d.channel }}
+      {% if d.simhub %}
+      <div class="simhub-box">
+        <div class="simhub-header">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          SimHub Linked
         </div>
-      {% endif %}
-
-      {% if d.identify_id %}
-        <div style="font-size:11px;color:#9eff9e">
-          ID {{ d.identify_id }}
+        <div class="simhub-grid">
+          {% if d.simhub.simhub_name %}
+          <span>Name: <strong>{{ d.simhub.simhub_name }}</strong></span>
+          {% endif %}
+          {% if d.simhub.rgb_leds %}
+          <span>RGB LEDs: <strong>{{ d.simhub.rgb_leds }}</strong></span>
+          {% endif %}
+          {% if d.simhub.display_modules %}
+          <span>Displays: <strong>{{ d.simhub.display_modules }}</strong></span>
+          {% endif %}
+          {% if d.simhub.motors %}
+          <span>Motors: <strong>{{ d.simhub.motors }}</strong></span>
+          {% endif %}
+          {% if d.simhub.read_buttons %}
+          <span>Buttons: <strong>Yes</strong></span>
+          {% endif %}
+          <span>Status: <strong style="color:{{ 'var(--danger)' if d.simhub.disabled else 'var(--accent)' }}">{{ 'Disabled' if d.simhub.disabled else 'Active' }}</strong></span>
         </div>
+        <div class="simhub-uid">{{ d.simhub_uid }}</div>
+      </div>
+      {% elif d.simhub_uid %}
+      <div class="simhub-box error">
+        <div class="simhub-header">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          SimHub UID Not Found
+        </div>
+        <div style="font-size:10px;">Device configured but not in SimHub config</div>
+      </div>
       {% endif %}
 
-      <span class="card-port">{{ d.port }}</span>
-    </div>
-    <div class="badge {{ 'ok' if d.status=='connected' else 'missing' }}">
-      {{ d.status }}
-    </div>
-  </div>
-
-  {% if d.description or d.manufacturer or d.vid or d.pid or d.serial_number %}
-  <div style="margin-top:8px;font-size:11px;color:var(--muted)">
-    {% if d.description %}
-      {{ d.description }}<br>
-    {% endif %}
-    {% if d.manufacturer %}
-      {{ d.manufacturer }}<br>
-    {% endif %}
-    {% if d.vid or d.pid %}
-      USB {{ d.vid or '----' }}:{{ d.pid or '----' }}<br>
-    {% endif %}
-    {% if d.serial_number %}
-      SN {{ d.serial_number }}
-    {% endif %}
-  </div>
-  {% endif %}
-
-  {% if d.connected_for %}
-  <div style="margin-top:4px;font-size:11px;color:var(--muted)">
-    Connected for {{ d.connected_for }}
-  </div>
-  {% endif %}
-
-  {% if d.simhub %}
-  <div style="margin-top:8px;padding:8px;background:rgba(76,175,80,0.1);border:1px solid var(--accent);border-radius:6px;">
-    <div style="font-size:10px;color:var(--accent);font-weight:600;margin-bottom:4px;">
-      🔗 SIMHUB LINKED
-    </div>
-    <div style="font-size:11px;color:var(--text);display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-      {% if d.simhub.simhub_name %}
-        <span>Name: <strong>{{ d.simhub.simhub_name }}</strong></span>
-      {% endif %}
-      {% if d.simhub.rgb_leds %}
-        <span>RGB LEDs: <strong>{{ d.simhub.rgb_leds }}</strong></span>
-      {% endif %}
-      {% if d.simhub.display_modules %}
-        <span>Displays: <strong>{{ d.simhub.display_modules }}</strong></span>
-      {% endif %}
-      {% if d.simhub.motors %}
-        <span>Motors: <strong>{{ d.simhub.motors }}</strong></span>
-      {% endif %}
-      {% if d.simhub.read_buttons %}
-        <span>Buttons: <strong>Yes</strong></span>
-      {% endif %}
-      {% if d.simhub.disabled %}
-        <span style="color:var(--danger)">Status: <strong>Disabled</strong></span>
-      {% else %}
-        <span style="color:var(--accent)">Status: <strong>Enabled</strong></span>
+      {% if not d.simhub and d.connected_for and not (d.description or d.manufacturer or d.vid) %}
+      <div class="connection-time">Connected for {{ d.connected_for }}</div>
       {% endif %}
     </div>
-    <div style="font-size:9px;color:var(--muted);margin-top:4px;word-break:break-all;">
-      UID: {{ d.simhub_uid }}
+
+    <div class="card-actions">
+      <div class="left">
+        {% if d.group %}{{ d.group }}{% else %}No group{% endif %}
+      </div>
+      <div class="right">
+        {% if not d.installed %}
+        <button class="btn-install" title="Assign an Identify ID" onclick="installDevice('{{ d.key }}')">Install</button>
+        {% endif %}
+
+        {% if d.role == 'Gauge' %}
+        <button class="btn-identify" disabled style="opacity:.35;cursor:not-allowed;" title="Gauge devices are controlled by SimHub directly">Identify</button>
+        <button class="btn-test" disabled style="opacity:.35;cursor:not-allowed;" title="Gauge devices are controlled by SimHub directly">Test</button>
+        {% else %}
+        <button class="btn-identify" title="Blink to identify (NumPad 9)" onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">Identify</button>
+        <button class="btn-test" title="Test pattern (NumPad 0)" onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">Test</button>
+        {% endif %}
+
+        <button class="btn-edit" onclick="openModal('{{ d.key }}','{{ d.name }}','{{ d.tags|join(', ') }}','{{ d.role }}',{{ d.channel or 0 }},'{{ d.group or '' }}','{{ d.simhub_uid or '' }}')">Edit</button>
+      </div>
     </div>
-  </div>
-  {% elif d.simhub_uid %}
-  <div style="margin-top:8px;padding:6px;background:rgba(255,76,76,0.1);border:1px solid var(--danger);border-radius:6px;font-size:10px;color:var(--danger);">
-    ⚠️ SimHub UID set but device not found in SimHub config
-  </div>
-  {% endif %}
-
-  <div class="actions">
-    <span style="font-size:11px;color:var(--muted)">
-      {{ d.role }}{% if d.group %} · {{ d.group }}{% endif %}
-    </span>
-    <div>
-      {% if not d.installed %}
-      <button class="btn-install"
-              title="Assign or reassign an Identify ID for this device"
-              onclick="installDevice('{{ d.key }}')">
-        Install
-      </button>
-      {% endif %}
-
-      {% if d.role == 'Gauge' %}
-        <button class="btn-identify" style="opacity:.4;cursor:default;" disabled
-                title="This device is driven directly by SimHub gauges and is not controllable from this manager.">
-          Identify
-        </button>
-        <button class="btn-test" style="opacity:.4;cursor:default;" disabled
-                title="This device is driven directly by SimHub gauges and is not controllable from this manager.">
-          Test
-        </button>
-      {% else %}
-        <button class="btn-identify"
-                title="Short identify blink using NumPad 9 in SimHub"
-                onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">
-          Identify
-        </button>
-
-        <button class="btn-test"
-                title="Longer test pattern using NumPad 0 in SimHub"
-                onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">
-          Test
-        </button>
-      {% endif %}
-
-      <button class="btn-edit"
-              onclick="openModal(
-                '{{ d.key }}',
-                '{{ d.name }}',
-                '{{ d.tags|join(', ') }}',
-                '{{ d.role }}',
-                {{ d.channel or 0 }},
-                '{{ d.group or '' }}',
-                '{{ d.simhub_uid or '' }}'
-              )">
-        Edit
-      </button>
-    </div>
-  </div>
   </div>
 {% endfor %}
 </div>
 
 <div class="footer">
-  <span>
-    Made by Matthew Wicks · JOML – Just One More Lap ·
-    <a href="https://www.youtube.com/@JOMLRacing" target="_blank" style="color:var(--accent);text-decoration:none;">YouTube</a> ·
-    <a href="https://github.com/meanstackofdoom/simhub-arduino-manager" target="_blank" style="color:var(--accent);text-decoration:none;">GitHub</a>
-    <button type="button"
-            onclick="openAbout()"
-            style="margin-left:8px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
-      About
-    </button>
-    <button type="button"
-            onclick="openPlanned()"
-            style="margin-left:4px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
-      Planned
-    </button>
-    <button type="button"
-            onclick="openChangelog()"
-            style="margin-left:4px;background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
-      Changelog
-    </button>
-  </span>
-  <span style="display:flex;align-items:center;gap:8px;">
+  <div>
+    <span>Built by <strong>Matthew Wicks</strong></span> · 
+    <span style="color:var(--accent)">JOML – Just One More Lap</span> · 
+    <a href="https://www.youtube.com/@JOMLRacing" target="_blank">YouTube</a> · 
+    <a href="https://github.com/meanstackofdoom/simhub-arduino-manager" target="_blank">GitHub</a>
+    <span class="footer-btns" style="margin-left:12px;">
+      <button class="footer-btn" onclick="openAbout()">About</button>
+      <button class="footer-btn" onclick="openPlanned()">Roadmap</button>
+      <button class="footer-btn" onclick="openChangelog()">Changelog</button>
+    </span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
     <div class="tooltip">
-      <button type="button"
-              aria-label="Keyboard shortcuts"
-              style="background:#333;color:white;border-radius:50%;width:22px;height:22px;font-size:11px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-        ?
-      </button>
-      <div class="tooltip-bubble">
-        Num 9 = Identify · Num 0 = Test · Auto-rescan every 15s
-      </div>
+      <button class="footer-btn" style="width:24px;height:24px;padding:0;border-radius:50%;" aria-label="Help">?</button>
+      <div class="tooltip-bubble">NumPad 9 = Identify · NumPad 0 = Test · Auto-refresh 15s</div>
     </div>
-    <button id="theme-toggle"
-            type="button"
-            style="background:#333;color:white;border-radius:6px;padding:3px 8px;font-size:11px;border:none;cursor:pointer;">
-      Dark
-    </button>
-    <span>v0.1.0 · scan {{ stats.last_scan }}</span>
-  </span>
+    <button id="theme-toggle" class="footer-btn">Dark</button>
+    <span style="font-size:10px;color:var(--muted);">v0.2.0 · {{ stats.last_scan }}</span>
+  </div>
 </div>
 
 <div class="modal" id="about-modal">

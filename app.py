@@ -6,6 +6,8 @@ import subprocess
 import port_manager
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
 
 SIMHUB_EXE_NAMES = ["SimHubWPF.exe", "SimHub.exe"]
 SIMHUB_PLUGIN_PATHS = [
@@ -55,6 +57,9 @@ def index():
 
     # Get available SimHub devices for linking dropdown
     simhub_devices = port_manager.get_simhub_devices()
+    
+    # Get active LED profiles from SimHub
+    active_profiles = port_manager.get_active_profiles()
 
     stats = {
         "connected": sum(d["status"] == "connected" for d in devices),
@@ -64,6 +69,8 @@ def index():
         # Live guardrails / environment checks
         "simhub_running": is_simhub_running(),
         "plugin_installed": is_plugin_installed(),
+        # Active LED profiles
+        "active_profiles": active_profiles,
     }
 
     return render_template("index.html", devices=devices, stats=stats, profiles=profiles, simhub_devices=simhub_devices)
@@ -198,4 +205,4 @@ def load_profile():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)

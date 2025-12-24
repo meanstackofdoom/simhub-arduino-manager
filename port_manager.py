@@ -11,12 +11,93 @@ from datetime import datetime
 
 CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
 
-# SimHub SerialDashPlugin config – this is where SimHub stores device metadata
+# SimHub config paths
 SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
+SIMHUB_RGB_LEDS_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBLedsSettings.json")
+SIMHUB_RGB_MATRIX_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBMatrixSettings.json")
+
+# Cached data
+_simhub_port_lists: dict = {"whitelist": [], "blacklist": []}
+_simhub_active_profiles: dict = {}
 
 # =========================
 # SimHub Config Reader
 # =========================
+
+def load_simhub_port_lists() -> dict:
+    """Load COM port whitelist and blacklist from SimHub config."""
+    global _simhub_port_lists
+    if not SIMHUB_CONFIG_PATH.exists():
+        return {"whitelist": [], "blacklist": []}
+    
+    try:
+        data = json.loads(SIMHUB_CONFIG_PATH.read_text(encoding="utf-8"))
+        _simhub_port_lists = {
+            "whitelist": data.get("WhiteList", []),
+            "blacklist": data.get("BlackList", []),
+        }
+        return _simhub_port_lists
+    except Exception as e:
+        print(f"[SIMHUB] Failed to load port lists: {e}")
+        return {"whitelist": [], "blacklist": []}
+
+
+def load_simhub_profiles() -> dict:
+    """Load active LED profiles from SimHub config files."""
+    global _simhub_active_profiles
+    profiles = {}
+    
+    # RGB LEDs profile
+    if SIMHUB_RGB_LEDS_PATH.exists():
+        try:
+            data = json.loads(SIMHUB_RGB_LEDS_PATH.read_text(encoding="utf-8"))
+            active_id = data.get("activeProfileId", "")
+            for p in data.get("Profiles", []):
+                if p.get("ProfileId") == active_id:
+                    profiles["rgb_leds"] = {
+                        "name": p.get("Name", "Unknown"),
+                        "id": active_id,
+                        "brightness": p.get("GlobalBrightness", 100),
+                    }
+                    break
+        except Exception as e:
+            print(f"[SIMHUB] Failed to load RGB LEDs profiles: {e}")
+    
+    # RGB Matrix profile
+    if SIMHUB_RGB_MATRIX_PATH.exists():
+        try:
+            data = json.loads(SIMHUB_RGB_MATRIX_PATH.read_text(encoding="utf-8"))
+            active_id = data.get("activeProfileId", "")
+            for p in data.get("Profiles", []):
+                if p.get("ProfileId") == active_id:
+                    profiles["rgb_matrix"] = {
+                        "name": p.get("Name", "Unknown"),
+                        "id": active_id,
+                        "brightness": data.get("GlobalBrightness", 100),
+                    }
+                    break
+        except Exception as e:
+            print(f"[SIMHUB] Failed to load RGB Matrix profiles: {e}")
+    
+    _simhub_active_profiles = profiles
+    return profiles
+
+
+def get_port_status(port_name: str) -> str:
+    """Return 'whitelisted', 'blacklisted', or 'unlisted' for a COM port."""
+    global _simhub_port_lists
+    if port_name in _simhub_port_lists.get("blacklist", []):
+        return "blacklisted"
+    if port_name in _simhub_port_lists.get("whitelist", []):
+        return "whitelisted"
+    return "unlisted"
+
+
+def get_active_profiles() -> dict:
+    """Return cached active profiles."""
+    global _simhub_active_profiles
+    return _simhub_active_profiles
+
 
 def load_simhub_devices() -> dict:
     """
@@ -211,8 +292,10 @@ def scan_ports():
     now = datetime.utcnow()
     touched = False
 
-    # Refresh SimHub device cache on each scan
+    # Refresh SimHub caches on each scan
     _simhub_devices_cache = load_simhub_devices()
+    load_simhub_port_lists()
+    load_simhub_profiles()
 
     for p in ports:
         key = make_device_key(p)
@@ -268,6 +351,7 @@ def scan_ports():
             "connected_for": connected_for,
             "simhub_uid": linked_uid,
             "simhub": simhub_info,
+            "port_status": get_port_status(p.device),
         })
 
     if touched:
