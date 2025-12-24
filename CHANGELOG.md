@@ -7,6 +7,34 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ---
 
+## [0.2.1] – Session Stats & Custom Serial Integration
+**2025-12-24**
+
+### ✨ Added
+- **Session Statistics Modal** – Track your session in real-time:
+  - App uptime (how long the manager has been running)
+  - Identify clicks, Test clicks, Installs counters
+  - Session start time and last scan time
+  - Profiles loaded/saved counts
+- **Custom Serial Device Info** – Reads `CustomSerialPlugin.GeneralSettings2.json`:
+  - Shows all Custom Serial devices (e.g., boost gauges)
+  - Displays port, baud rate, DTR/RTS status, auto-reconnect, logging
+  - Connection status (Connected/Disconnected/Disabled)
+  - Last error message with timestamp if any
+- **Enhanced Visual Indicators**:
+  - ✓ Connected badge with checkmark prefix
+  - Cleaner status badges with improved styling
+- New **📊 Stats** button in footer to open session statistics
+
+### 🛠️ Internal
+- Added `load_custom_serial_devices()` function to parse SimHub's CustomSerialPlugin config
+- Added session tracking (`SESSION_START`, `SESSION_STATS`) in `app.py`
+- Added `get_session_uptime()` helper for human-readable uptime
+- Stats counters track identify, test, install, and profile actions
+- Auto-refresh now pauses when Stats modal is open
+
+---
+
 ## [0.2.0] – SimHub Config Integration & UI Redesign
 **2025-12-24**
 
@@ -23,7 +51,6 @@ Features may evolve rapidly as SimHub integrations are explored.
 - New **SimHub Link** dropdown in the Edit modal to associate devices
 - Visual indicator on cards showing linked SimHub devices with a green "SIMHUB LINKED" badge
 - Warning indicator when a SimHub UID is set but the device isn't found in SimHub config
-- **Active Profiles Banner**: Shows currently active RGB LEDs and Matrix profiles with brightness %
 - **COM Port Status**: Shows if port is whitelisted/blacklisted in SimHub
 
 ### 🎨 UI Redesign
@@ -101,9 +128,11 @@ Features may evolve rapidly as SimHub integrations are explored.
 
 ## Planned (Upcoming)
 
-### 🚧 0.2.x – Device Health & Metadata (Partially Complete ✅)
+### 🚧 0.2.x – Device Health & Metadata (Mostly Complete ✅)
 - ✅ SimHub config file integration (LED count, modules, motors)
 - ✅ Device linking via SimHub Unique ID
+- ✅ Custom Serial device info (boost gauges, etc.)
+- ✅ Session statistics tracking
 - Live device health / heartbeat indicators
 - RX / TX counters (requires SimHub live API)
 - Firmware name & MCU type display (if exposed by SimHub)

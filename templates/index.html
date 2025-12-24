@@ -252,16 +252,46 @@ button{
 .modal-box input:focus,.modal-box select:focus{outline:none;border-color:var(--accent);}
 .field-help{font-size:10px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;}
 
-/* Active Profiles Banner */
-.profiles-banner{
-  display:flex;gap:16px;padding:10px 16px;margin-bottom:16px;
+/* Custom Serial Section */
+.custom-serial-section{
+  margin-bottom:20px;padding:16px;
   background:var(--panel);border:1px solid var(--border);border-radius:10px;
-  font-size:11px;
 }
-.profile-item{display:flex;align-items:center;gap:6px;}
-.profile-item .label{color:var(--muted);text-transform:uppercase;font-size:9px;letter-spacing:0.5px;}
-.profile-item .value{color:var(--text);font-weight:500;}
-.profile-item .brightness{color:var(--warning);font-size:10px;}
+.custom-serial-section h3{
+  font-size:13px;font-weight:600;color:var(--warning);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.custom-serial-grid{display:flex;gap:12px;flex-wrap:wrap;}
+.serial-card{
+  background:var(--panel-alt);border:1px solid var(--border-subtle);border-radius:8px;
+  padding:12px;min-width:280px;flex:1;max-width:400px;
+}
+.serial-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.serial-card-title{font-size:13px;font-weight:600;color:var(--text);}
+.serial-status{
+  font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;
+}
+.serial-status.connected{background:var(--accent-dim);color:var(--accent);}
+.serial-status.disconnected{background:var(--danger-dim);color:var(--danger);}
+.serial-status.disabled{background:var(--border);color:var(--muted);}
+.serial-details{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:11px;color:var(--text-secondary);}
+.serial-details .label{color:var(--muted);font-size:10px;}
+.serial-error{margin-top:8px;padding:6px 8px;background:var(--danger-dim);border-radius:4px;font-size:10px;color:var(--danger);}
+
+/* Enhanced status indicators */
+.status-badge.connected::before{content:"✓ ";font-weight:bold;}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+.card.healthy{animation:pulse-green 2s ease-in-out 1;}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.stat-box{
+  background:var(--panel-alt);border:1px solid var(--border-subtle);border-radius:8px;
+  padding:16px;text-align:center;
+}
+.stat-value{font-size:24px;font-weight:700;color:var(--accent);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;}
+
 </style>
 </head>
 
@@ -310,28 +340,48 @@ button{
   <button class="primary" onclick="bulkInstall()" title="Assign IDs to all uninstalled devices">Bulk Install</button>
 </div>
 
-{% if stats.active_profiles %}
-<div class="profiles-banner">
-  {% if stats.active_profiles.rgb_leds %}
-  <div class="profile-item">
-    <span class="label">RGB LEDs</span>
-    <span class="value">{{ stats.active_profiles.rgb_leds.name }}</span>
-    <span class="brightness">{{ stats.active_profiles.rgb_leds.brightness|int }}%</span>
-  </div>
-  {% endif %}
-  {% if stats.active_profiles.rgb_matrix %}
-  <div class="profile-item">
-    <span class="label">Matrix</span>
-    <span class="value">{{ stats.active_profiles.rgb_matrix.name }}</span>
-    <span class="brightness">{{ stats.active_profiles.rgb_matrix.brightness|int }}%</span>
-  </div>
-  {% endif %}
-</div>
-{% endif %}
-
 <div class="search-box">
   <input placeholder="Filter devices by name, port, role…" oninput="filterCards(this.value)">
 </div>
+
+{% if custom_serial_devices %}
+<div class="custom-serial-section">
+  <h3>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Custom Serial Devices
+  </h3>
+  <div class="custom-serial-grid">
+    {% for cs in custom_serial_devices %}
+    <div class="serial-card">
+      <div class="serial-card-header">
+        <span class="serial-card-title">{{ cs.name }}</span>
+        {% if not cs.is_enabled %}
+        <span class="serial-status disabled">Disabled</span>
+        {% elif cs.is_connected %}
+        <span class="serial-status connected">Connected</span>
+        {% else %}
+        <span class="serial-status disconnected">Disconnected</span>
+        {% endif %}
+      </div>
+      <div class="serial-details">
+        <span><span class="label">Port</span> {{ cs.port }}</span>
+        <span><span class="label">Baud</span> {{ cs.baud_rate }}</span>
+        <span><span class="label">DTR</span> {{ '✓' if cs.dtr_enable else '✗' }}</span>
+        <span><span class="label">RTS</span> {{ '✓' if cs.rts_enable else '✗' }}</span>
+        <span><span class="label">Auto-Reconnect</span> {{ '✓' if cs.auto_reconnect else '✗' }}</span>
+        <span><span class="label">Logging</span> {{ '✓' if cs.log_incoming else '✗' }}</span>
+      </div>
+      {% if cs.last_error %}
+      <div class="serial-error">
+        <strong>Last Error:</strong> {{ cs.last_error }}<br>
+        <span style="font-size:9px;">{{ cs.last_error_date }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <div class="grid">
 {% for d in devices %}
@@ -455,6 +505,7 @@ button{
     <a href="https://www.youtube.com/@JOMLRacing" target="_blank">YouTube</a> · 
     <a href="https://github.com/meanstackofdoom/simhub-arduino-manager" target="_blank">GitHub</a>
     <span class="footer-btns" style="margin-left:12px;">
+      <button class="footer-btn" onclick="openStats()">📊 Stats</button>
       <button class="footer-btn" onclick="openAbout()">About</button>
       <button class="footer-btn" onclick="openPlanned()">Roadmap</button>
       <button class="footer-btn" onclick="openChangelog()">Changelog</button>
@@ -466,7 +517,7 @@ button{
       <div class="tooltip-bubble">NumPad 9 = Identify · NumPad 0 = Test · Auto-refresh 15s</div>
     </div>
     <button id="theme-toggle" class="footer-btn">Dark</button>
-    <span style="font-size:10px;color:var(--muted);">v0.2.0 · {{ stats.last_scan }}</span>
+    <span style="font-size:10px;color:var(--muted);">v0.2.1 · {{ stats.last_scan }}</span>
   </div>
 </div>
 
@@ -556,6 +607,68 @@ button{
   </div>
 </div>
 
+<div class="modal" id="stats-modal">
+  <div class="modal-box" style="width:420px;">
+    <h2 style="color:var(--accent);margin:0 0 16px;display:flex;align-items:center;gap:8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      Session Statistics
+    </h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.uptime }}</div>
+        <div class="stat-label">Uptime</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.connected }}</div>
+        <div class="stat-label">Devices Online</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total Devices</div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value" style="color:var(--info);">{{ stats.identify_count }}</div>
+        <div class="stat-label">Identify Clicks</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" style="color:var(--warning);">{{ stats.test_count }}</div>
+        <div class="stat-label">Test Clicks</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" style="color:var(--accent);">{{ stats.devices_installed }}</div>
+        <div class="stat-label">Installs</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;padding:10px;background:var(--panel-alt);border-radius:6px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span>Session started:</span>
+        <span style="color:var(--text);">{{ stats.session_start }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span>Last scan:</span>
+        <span style="color:var(--text);">{{ stats.last_scan }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span>Profiles loaded:</span>
+        <span style="color:var(--text);">{{ stats.profiles_loaded }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span>Profiles saved:</span>
+        <span style="color:var(--text);">{{ stats.profiles_saved }}</span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button type="button"
+              onclick="closeStats()"
+              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:12px;cursor:pointer;">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="modal">
 <form class="modal-box" method="post" action="/update">
   <h2 style="color:var(--accent);margin:0 0 15px">
@@ -623,6 +736,7 @@ const modal = document.getElementById("modal");
 const aboutModal = document.getElementById("about-modal");
 const plannedModal = document.getElementById("planned-modal");
 const changelogModal = document.getElementById("changelog-modal");
+const statsModal = document.getElementById("stats-modal");
 const m_key = document.getElementById("m-key");
 const m_name = document.getElementById("m-name");
 const m_tags = document.getElementById("m-tags");
@@ -707,8 +821,12 @@ function filterCards(v){
   });
 }
 setInterval(()=>{
-  if(!modal.classList.contains("open"))
-    location.reload();
+  const anyModalOpen = modal.classList.contains("open") ||
+    aboutModal.classList.contains("open") ||
+    plannedModal.classList.contains("open") ||
+    changelogModal.classList.contains("open") ||
+    statsModal.classList.contains("open");
+  if(!anyModalOpen) location.reload();
 },15000);
 
 function bulkInstall() {
@@ -752,6 +870,17 @@ function openChangelog(){
 function closeChangelog(){
   if(changelogModal){
     changelogModal.classList.remove("open");
+  }
+}
+
+function openStats(){
+  if(statsModal){
+    statsModal.classList.add("open");
+  }
+}
+function closeStats(){
+  if(statsModal){
+    statsModal.classList.remove("open");
   }
 }
 

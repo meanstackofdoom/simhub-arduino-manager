@@ -9,6 +9,35 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
 
+# =========================
+# Session Stats Tracking
+# =========================
+SESSION_START = datetime.now()
+SESSION_STATS = {
+    "identify_count": 0,
+    "test_count": 0,
+    "devices_installed": 0,
+    "profiles_loaded": 0,
+    "profiles_saved": 0,
+}
+
+
+def get_session_uptime() -> str:
+    """Return human-readable session uptime."""
+    delta = datetime.now() - SESSION_START
+    total_seconds = int(delta.total_seconds())
+    
+    if total_seconds < 60:
+        return f"{total_seconds}s"
+    minutes, seconds = divmod(total_seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m {seconds}s"
+    hours, minutes = divmod(minutes, 60)
+    if hours < 24:
+        return f"{hours}h {minutes}m"
+    days, hours = divmod(hours, 24)
+    return f"{days}d {hours}h"
+
 SIMHUB_EXE_NAMES = ["SimHubWPF.exe", "SimHub.exe"]
 SIMHUB_PLUGIN_PATHS = [
     # Common plugin folder locations
@@ -60,6 +89,9 @@ def index():
     
     # Get active LED profiles from SimHub
     active_profiles = port_manager.get_active_profiles()
+    
+    # Get Custom Serial devices (e.g., boost gauge)
+    custom_serial_devices = port_manager.load_custom_serial_devices()
 
     stats = {
         "connected": sum(d["status"] == "connected" for d in devices),
@@ -71,13 +103,31 @@ def index():
         "plugin_installed": is_plugin_installed(),
         # Active LED profiles
         "active_profiles": active_profiles,
+        # Session stats
+        "uptime": get_session_uptime(),
+        "session_start": SESSION_START.strftime("%H:%M:%S"),
+        "identify_count": SESSION_STATS["identify_count"],
+        "test_count": SESSION_STATS["test_count"],
+        "devices_installed": SESSION_STATS["devices_installed"],
+        "profiles_loaded": SESSION_STATS["profiles_loaded"],
+        "profiles_saved": SESSION_STATS["profiles_saved"],
     }
 
-    return render_template("index.html", devices=devices, stats=stats, profiles=profiles, simhub_devices=simhub_devices)
+    return render_template(
+        "index.html",
+        devices=devices,
+        stats=stats,
+        profiles=profiles,
+        simhub_devices=simhub_devices,
+        custom_serial_devices=custom_serial_devices,
+    )
 
 @app.route("/install/<path:key>", methods=["POST"])
 def install(key):
-    return ("OK", 200) if port_manager.install_device(key) else ("Error", 400)
+    result = port_manager.install_device(key)
+    if result:
+        SESSION_STATS["devices_installed"] += 1
+    return ("OK", 200) if result else ("Error", 400)
 
 @app.route("/bulk_install", methods=["POST"])
 def bulk_install():
@@ -94,6 +144,7 @@ def identify(key):
 
     print(f"[IDENTIFY] Requested identify for {key}")
     port_manager.identify_device(key, mode="identify")
+    SESSION_STATS["identify_count"] += 1
     return ("", 204)
 
 
@@ -107,6 +158,7 @@ def test(key):
 
     print(f"[TEST] Requested test pattern for {key}")
     port_manager.identify_device(key, mode="test")
+    SESSION_STATS["test_count"] += 1
     return ("", 204)
 
 
@@ -174,6 +226,7 @@ def save_profile():
 
     # Dump current ports config as profile snapshot
     dest.write_text(json.dumps(port_manager.saved, indent=2))
+    SESSION_STATS["profiles_saved"] += 1
     print(f"[PROFILE] Saved profile '{name}' to {dest}")
     return redirect("/")
 
@@ -200,6 +253,7 @@ def load_profile():
     port_manager.saved.clear()
     port_manager.saved.update(data)
     port_manager.save_config()
+    SESSION_STATS["profiles_loaded"] += 1
     print(f"[PROFILE] Loaded profile '{name}'")
     return redirect("/")
 

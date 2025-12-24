@@ -15,6 +15,7 @@ CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
 SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
 SIMHUB_RGB_LEDS_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBLedsSettings.json")
 SIMHUB_RGB_MATRIX_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBMatrixSettings.json")
+SIMHUB_CUSTOM_SERIAL_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\CustomSerialPlugin.GeneralSettings2.json")
 
 # Cached data
 _simhub_port_lists: dict = {"whitelist": [], "blacklist": []}
@@ -97,6 +98,51 @@ def get_active_profiles() -> dict:
     """Return cached active profiles."""
     global _simhub_active_profiles
     return _simhub_active_profiles
+
+
+def load_custom_serial_devices() -> list:
+    """
+    Load Custom Serial devices from SimHub's CustomSerialPlugin config.
+    Returns device info including connection status, baud rate, errors, etc.
+    """
+    if not SIMHUB_CUSTOM_SERIAL_PATH.exists():
+        return []
+    
+    try:
+        data = json.loads(SIMHUB_CUSTOM_SERIAL_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"[SIMHUB] Failed to load Custom Serial config: {e}")
+        return []
+    
+    devices = []
+    for dev in data.get("Devices", []):
+        # Parse last error date if present
+        last_error_date = dev.get("LastErrorDate")
+        error_time_str = ""
+        if last_error_date:
+            try:
+                error_dt = datetime.fromisoformat(last_error_date.replace("+10:00", "+10:00").split(".")[0])
+                error_time_str = error_dt.strftime("%Y-%m-%d %H:%M")
+            except:
+                error_time_str = last_error_date[:16] if len(last_error_date) > 16 else last_error_date
+        
+        devices.append({
+            "name": dev.get("Name", "Custom Serial Device"),
+            "description": dev.get("Description", ""),
+            "port": dev.get("SerialPortName", "Unknown"),
+            "baud_rate": dev.get("BaudRate", 0),
+            "is_enabled": dev.get("IsEnabled", False),
+            "is_connected": dev.get("IsConnected", False),
+            "dtr_enable": dev.get("DtrEnable", False),
+            "rts_enable": dev.get("RtsEnable", False),
+            "auto_reconnect": dev.get("AutomaticReconnect", False),
+            "last_error": dev.get("LastErrorMessage"),
+            "last_error_date": error_time_str,
+            "log_incoming": dev.get("LogIncomingData", False),
+        })
+    
+    print(f"[SIMHUB] Loaded {len(devices)} Custom Serial devices")
+    return devices
 
 
 def load_simhub_devices() -> dict:
