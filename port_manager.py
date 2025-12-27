@@ -209,13 +209,18 @@ def load_custom_serial_devices() -> list:
         on_disconnect = dev.get("OnDisconnectMessage", {}).get("Expression", "")
         
         # Get local notes for this device
-        port_name = dev.get("SerialPortName", "Unknown")
-        local_notes = get_custom_serial_note(port_name)
+        # Use port name if available, otherwise use device name as identifier
+        port_name = dev.get("SerialPortName") or None
+        device_name = dev.get("Name", "Custom Serial Device")
+        # Create a unique key for notes: prefer port, fallback to name
+        notes_key = port_name if port_name else f"name:{device_name}"
+        local_notes = get_custom_serial_note(notes_key)
         
         devices.append({
-            "name": dev.get("Name", "Custom Serial Device"),
+            "name": device_name,
             "description": dev.get("Description", ""),
             "port": port_name,
+            "notes_key": notes_key,  # Used for saving notes
             "baud_rate": dev.get("BaudRate", 0),
             "is_enabled": dev.get("IsEnabled", False),
             "is_connected": dev.get("IsConnected", False),

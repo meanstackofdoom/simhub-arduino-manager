@@ -372,7 +372,7 @@ button{
         {% endif %}
       </div>
       <div class="serial-details">
-        <span><span class="label">Port</span> {{ cs.port }}</span>
+        <span><span class="label">Port</span> {{ cs.port or 'None' }}</span>
         <span><span class="label">Baud</span> {{ cs.baud_rate }}</span>
         <span><span class="label">Update Rate</span> {{ cs.update_frequency }}Hz</span>
         <span><span class="label">Startup Delay</span> {{ cs.startup_delay }}ms</span>
@@ -415,7 +415,7 @@ button{
       {% endif %}
       <div style="margin-top:10px;display:flex;justify-content:flex-end;">
         <button class="btn-edit" style="background:var(--warning);font-size:10px;padding:4px 10px;" 
-          data-port="{{ cs.port }}"
+          data-port="{{ cs.notes_key|e }}"
           data-desc="{{ cs.custom_description|default('', true)|e }}"
           data-notes="{{ cs.notes|default('', true)|e }}"
           onclick="openCsModal(this.dataset.port, this.dataset.desc, this.dataset.notes)">Edit Notes</button>
