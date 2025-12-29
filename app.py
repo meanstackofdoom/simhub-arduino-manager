@@ -92,6 +92,9 @@ def index():
     
     # Get Custom Serial devices (e.g., boost gauge)
     custom_serial_devices = port_manager.load_custom_serial_devices()
+    
+    # Get device history
+    device_history = port_manager.get_device_history(limit=20)
 
     stats = {
         "connected": sum(d["status"] == "connected" for d in devices),
@@ -120,6 +123,7 @@ def index():
         profiles=profiles,
         simhub_devices=simhub_devices,
         custom_serial_devices=custom_serial_devices,
+        device_history=device_history,
     )
 
 @app.route("/install/<path:key>", methods=["POST"])
