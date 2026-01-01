@@ -1,371 +1,217 @@
-import pyautogui
 import serial.tools.list_ports
 import json
-import re
+import time
 from pathlib import Path
 from datetime import datetime
+from collections import defaultdict, Counter
 
 # =========================
 # Config
 # =========================
 
-CONFIG_FILE = Path(r"C:\Users\endfm\Desktop\ports\ports.json")
-CUSTOM_SERIAL_NOTES_FILE = Path(r"C:\Users\endfm\Desktop\ports\custom_serial_notes.json")
-
-# SimHub config paths
-SIMHUB_CONFIG_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\SerialDashPlugin.json")
-SIMHUB_RGB_LEDS_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBLedsSettings.json")
-SIMHUB_RGB_MATRIX_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\ArduinoRGBMatrixSettings.json")
-SIMHUB_CUSTOM_SERIAL_PATH = Path(r"C:\Program Files (x86)\SimHub\PluginsData\Common\CustomSerialPlugin.GeneralSettings2.json")
+# Use the directory where this script is located for config files
+_SCRIPT_DIR = Path(__file__).parent.resolve()
+CONFIG_FILE = _SCRIPT_DIR / "ports.json"
+HISTORY_FILE = _SCRIPT_DIR / "device_history.json"
+PORT_STATS_FILE = _SCRIPT_DIR / "port_stats.json"
+CONNECTION_EVENTS_FILE = _SCRIPT_DIR / "connection_events.json"
 
 # Cached data
-_simhub_port_lists: dict = {"whitelist": [], "blacklist": []}
-_simhub_active_profiles: dict = {}
-_custom_serial_notes: dict = {}
+_device_history: list = []
+_connection_events: list = []
+_port_stats: dict = {}
+_last_seen_ports: set = set()
+_session_start = datetime.now()
 
+MAX_HISTORY_ENTRIES = 200
+MAX_EVENTS_ENTRIES = 500
 
 # =========================
-# Custom Serial Notes (local annotations)
+# Device History
 # =========================
 
-def load_custom_serial_notes() -> dict:
-    """Load local notes/annotations for Custom Serial devices."""
-    global _custom_serial_notes
-    if not CUSTOM_SERIAL_NOTES_FILE.exists():
+def load_device_history() -> list:
+    """Load device connection/disconnection history."""
+    global _device_history
+    if not HISTORY_FILE.exists():
+        return []
+    try:
+        text = HISTORY_FILE.read_text().strip()
+        if not text:
+            return []
+        _device_history = json.loads(text)
+        return _device_history
+    except Exception as e:
+        print(f"[HISTORY] Failed to load history: {e}")
+        return []
+
+
+def save_device_history():
+    """Save device history to file."""
+    global _device_history
+    HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    # Keep only last N entries
+    _device_history = _device_history[-MAX_HISTORY_ENTRIES:]
+    HISTORY_FILE.write_text(json.dumps(_device_history, indent=2))
+
+
+def add_history_event(event_type: str, port: str, name: str, key: str, details: dict = None):
+    """Add a device event to history."""
+    global _device_history
+    event = {
+        "time": datetime.now().isoformat(),
+        "type": event_type,  # "connected", "disconnected", "port_change"
+        "port": port,
+        "name": name,
+        "key": key,
+    }
+    if details:
+        event["details"] = details
+    _device_history.append(event)
+    save_device_history()
+    print(f"[HISTORY] {event_type.upper()}: {name} on {port}")
+
+
+def get_device_history(limit: int = 50) -> list:
+    """Get recent device history, newest first."""
+    global _device_history
+    return list(reversed(_device_history[-limit:]))
+
+
+def get_device_port_history(key: str) -> list:
+    """Get port history for a specific device."""
+    global _device_history
+    events = [e for e in _device_history if e.get("key") == key]
+    return list(reversed(events[-20:]))
+
+# =========================
+# Port Analytics & Statistics
+# =========================
+
+def load_port_stats() -> dict:
+    """Load port usage statistics."""
+    global _port_stats
+    if not PORT_STATS_FILE.exists():
         return {}
     try:
-        text = CUSTOM_SERIAL_NOTES_FILE.read_text().strip()
+        text = PORT_STATS_FILE.read_text().strip()
         if not text:
             return {}
-        _custom_serial_notes = json.loads(text)
-        return _custom_serial_notes
+        _port_stats = json.loads(text)
+        return _port_stats
     except Exception as e:
-        print(f"[NOTES] Failed to load custom serial notes: {e}")
+        print(f"[STATS] Failed to load port stats: {e}")
         return {}
 
 
-def save_custom_serial_notes():
-    """Save local notes/annotations for Custom Serial devices."""
-    global _custom_serial_notes
-    CUSTOM_SERIAL_NOTES_FILE.write_text(json.dumps(_custom_serial_notes, indent=2))
+def save_port_stats():
+    """Save port statistics to file."""
+    global _port_stats
+    PORT_STATS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PORT_STATS_FILE.write_text(json.dumps(_port_stats, indent=2))
 
 
-def update_custom_serial_note(port: str, description: str = None, notes: str = None):
-    """Update notes for a Custom Serial device by port name."""
-    global _custom_serial_notes
-    if port not in _custom_serial_notes:
-        _custom_serial_notes[port] = {}
+def update_port_stats(port: str, event_type: str, device_key: str = None):
+    """Update port statistics for analytics."""
+    global _port_stats
     
-    if description is not None:
-        _custom_serial_notes[port]["description"] = description
-    if notes is not None:
-        _custom_serial_notes[port]["notes"] = notes
-    
-    save_custom_serial_notes()
-    print(f"[NOTES] Updated notes for {port}: {_custom_serial_notes[port]}")
-
-
-def get_custom_serial_note(port: str) -> dict:
-    """Get notes for a Custom Serial device."""
-    global _custom_serial_notes
-    return _custom_serial_notes.get(port, {})
-
-# =========================
-# SimHub Config Reader
-# =========================
-
-def load_simhub_port_lists() -> dict:
-    """Load COM port whitelist and blacklist from SimHub config."""
-    global _simhub_port_lists
-    if not SIMHUB_CONFIG_PATH.exists():
-        return {"whitelist": [], "blacklist": []}
-    
-    try:
-        data = json.loads(SIMHUB_CONFIG_PATH.read_text(encoding="utf-8"))
-        _simhub_port_lists = {
-            "whitelist": data.get("WhiteList", []),
-            "blacklist": data.get("BlackList", []),
+    if port not in _port_stats:
+        _port_stats[port] = {
+            "first_seen": datetime.now().isoformat(),
+            "last_seen": datetime.now().isoformat(),
+            "connection_count": 0,
+            "disconnection_count": 0,
+            "total_connection_time": 0,
+            "devices": set(),
+            "most_recent_device": None
         }
-        return _simhub_port_lists
-    except Exception as e:
-        print(f"[SIMHUB] Failed to load port lists: {e}")
-        return {"whitelist": [], "blacklist": []}
-
-
-def load_simhub_profiles() -> dict:
-    """Load active LED profiles from SimHub config files."""
-    global _simhub_active_profiles
-    profiles = {}
     
-    # RGB LEDs profile
-    if SIMHUB_RGB_LEDS_PATH.exists():
-        try:
-            data = json.loads(SIMHUB_RGB_LEDS_PATH.read_text(encoding="utf-8"))
-            active_id = data.get("activeProfileId", "")
-            for p in data.get("Profiles", []):
-                if p.get("ProfileId") == active_id:
-                    profiles["rgb_leds"] = {
-                        "name": p.get("Name", "Unknown"),
-                        "id": active_id,
-                        "brightness": p.get("GlobalBrightness", 100),
-                    }
-                    break
-        except Exception as e:
-            print(f"[SIMHUB] Failed to load RGB LEDs profiles: {e}")
+    stats = _port_stats[port]
+    stats["last_seen"] = datetime.now().isoformat()
     
-    # RGB Matrix profile
-    if SIMHUB_RGB_MATRIX_PATH.exists():
-        try:
-            data = json.loads(SIMHUB_RGB_MATRIX_PATH.read_text(encoding="utf-8"))
-            active_id = data.get("activeProfileId", "")
-            for p in data.get("Profiles", []):
-                if p.get("ProfileId") == active_id:
-                    profiles["rgb_matrix"] = {
-                        "name": p.get("Name", "Unknown"),
-                        "id": active_id,
-                        "brightness": data.get("GlobalBrightness", 100),
-                    }
-                    break
-        except Exception as e:
-            print(f"[SIMHUB] Failed to load RGB Matrix profiles: {e}")
+    if event_type == "connect":
+        stats["connection_count"] += 1
+        if device_key:
+            stats["devices"].add(device_key)
+            stats["most_recent_device"] = device_key
+    elif event_type == "disconnect":
+        stats["disconnection_count"] += 1
     
-    _simhub_active_profiles = profiles
-    return profiles
+    # Convert set to list for JSON serialization
+    stats["devices"] = list(stats["devices"])
+    save_port_stats()
 
 
-def get_port_status(port_name: str) -> str:
-    """Return 'whitelisted', 'blacklisted', or 'unlisted' for a COM port."""
-    global _simhub_port_lists
-    if port_name in _simhub_port_lists.get("blacklist", []):
-        return "blacklisted"
-    if port_name in _simhub_port_lists.get("whitelist", []):
-        return "whitelisted"
-    return "unlisted"
-
-
-def get_active_profiles() -> dict:
-    """Return cached active profiles."""
-    global _simhub_active_profiles
-    return _simhub_active_profiles
-
-
-def load_custom_serial_devices() -> list:
-    """
-    Load Custom Serial devices from SimHub's CustomSerialPlugin config.
-    Returns device info including connection status, baud rate, errors, etc.
-    """
-    if not SIMHUB_CUSTOM_SERIAL_PATH.exists():
-        return []
+def get_port_analytics() -> dict:
+    """Get comprehensive port analytics."""
+    global _port_stats
     
-    try:
-        data = json.loads(SIMHUB_CUSTOM_SERIAL_PATH.read_text(encoding="utf-8"))
-    except Exception as e:
-        print(f"[SIMHUB] Failed to load Custom Serial config: {e}")
-        return []
+    if not _port_stats:
+        load_port_stats()
     
-    devices = []
-    for dev in data.get("Devices", []):
-        # Parse last error date if present
-        last_error_date = dev.get("LastErrorDate")
-        error_time_str = ""
-        if last_error_date:
-            try:
-                error_dt = datetime.fromisoformat(last_error_date.replace("+10:00", "+10:00").split(".")[0])
-                error_time_str = error_dt.strftime("%Y-%m-%d %H:%M")
-            except:
-                error_time_str = last_error_date[:16] if len(last_error_date) > 16 else last_error_date
-        
-        # Parse update messages configuration
-        update_messages = dev.get("UpdateMessages", [])
-        update_freq = 0
-        has_expression = False
-        expression_type = ""
-        
-        for msg in update_messages:
-            if msg.get("IsEnabled", False):
-                update_freq = msg.get("MaximumFrequency", 0)
-                message_config = msg.get("Message", {})
-                expression = message_config.get("Expression", "")
-                if expression:
-                    has_expression = True
-                    # Detect expression type
-                    if "TurboBoost" in expression or "Turbo" in expression:
-                        expression_type = "Boost Gauge"
-                    elif "RPM" in expression:
-                        expression_type = "RPM Display"
-                    elif "Speed" in expression:
-                        expression_type = "Speedometer"
-                    elif "Gear" in expression:
-                        expression_type = "Gear Indicator"
-                    else:
-                        expression_type = "Custom Expression"
-        
-        # Check for connect/disconnect messages
-        on_connect = dev.get("OnConnectMessage", {}).get("Expression", "")
-        on_disconnect = dev.get("OnDisconnectMessage", {}).get("Expression", "")
-        
-        # Get local notes for this device
-        port_name = dev.get("SerialPortName", "Unknown")
-        local_notes = get_custom_serial_note(port_name)
-        
-        devices.append({
-            "name": dev.get("Name", "Custom Serial Device"),
-            "description": dev.get("Description", ""),
-            "port": port_name,
-            "baud_rate": dev.get("BaudRate", 0),
-            "is_enabled": dev.get("IsEnabled", False),
-            "is_connected": dev.get("IsConnected", False),
-            "is_connecting": dev.get("IsConnecting", False),
-            "is_frozen": dev.get("IsFreezed", False),
-            "dtr_enable": dev.get("DtrEnable", False),
-            "rts_enable": dev.get("RtsEnable", False),
-            "auto_reconnect": dev.get("AutomaticReconnect", False),
-            "startup_delay": dev.get("StartupDelayMs", 0),
-            "last_error": dev.get("LastErrorMessage"),
-            "last_error_date": error_time_str,
-            "log_incoming": dev.get("LogIncomingData", False),
-            # New fields
-            "update_frequency": update_freq,
-            "has_expression": has_expression,
-            "expression_type": expression_type,
-            "has_on_connect": bool(on_connect),
-            "has_on_disconnect": bool(on_disconnect),
-            # Local notes (editable)
-            "custom_description": local_notes.get("description", ""),
-            "notes": local_notes.get("notes", ""),
+    # Calculate analytics
+    total_ports = len(_port_stats)
+    active_ports = len([p for p in _port_stats.values() if "most_recent_device" in p and p["most_recent_device"]])
+    
+    # Most used ports
+    port_usage = [(port, data["connection_count"]) for port, data in _port_stats.items()]
+    most_used = sorted(port_usage, key=lambda x: x[1], reverse=True)[:5]
+    
+    # Devices per port
+    devices_per_port = [(port, len(data["devices"])) for port, data in _port_stats.items()]
+    port_diversity = sorted(devices_per_port, key=lambda x: x[1], reverse=True)[:5]
+    
+    return {
+        "total_ports": total_ports,
+        "active_ports": active_ports,
+        "most_used_ports": most_used,
+        "port_diversity": port_diversity,
+        "session_duration": str(datetime.now() - _session_start).split('.')[0],
+        "last_updated": datetime.now().isoformat()
+    }
+
+
+def get_connection_timeline(limit: int = 100) -> list:
+    """Get connection events as a timeline."""
+    global _device_history
+    events = []
+    
+    for event in _device_history[-limit:]:
+        events.append({
+            "time": event["time"],
+            "type": event["type"],
+            "port": event["port"],
+            "device_name": event["name"],
+            "device_key": event["key"]
         })
     
-    print(f"[SIMHUB] Loaded {len(devices)} Custom Serial devices")
-    return devices
+    return sorted(events, key=lambda x: x["time"], reverse=True)
 
-
-def load_simhub_devices() -> dict:
-    """
-    Read SimHub's SerialDashPlugin.json and return a dict keyed by deviceUniqueId.
-    Each entry contains the SimHub metadata (RgbLeds, displayModules, Motors, etc.).
-    """
-    if not SIMHUB_CONFIG_PATH.exists():
-        print(f"[SIMHUB] Config not found at {SIMHUB_CONFIG_PATH}")
-        return {}
-
-    try:
-        data = json.loads(SIMHUB_CONFIG_PATH.read_text(encoding="utf-8"))
-    except Exception as e:
-        print(f"[SIMHUB] Failed to parse config: {e}")
-        return {}
-
-    result = {}
-    devices = data.get("MultipleArduinoSettings", [])
-    
-    for dev in devices:
-        uid = dev.get("deviceUniqueId")
-        if uid:
-            result[uid] = {
-                "simhub_name": dev.get("deviceName", ""),
-                "simhub_uid": uid,
-                "rgb_leds": dev.get("RgbLeds", 0),
-                "display_modules": dev.get("displayModules", 0),
-                "motors": dev.get("Motors", 0),
-                "read_buttons": dev.get("readButtons", False),
-                "disabled": dev.get("disabled", False),
-                "speed_level": dev.get("speedLevel", 0),
-                "rotation": dev.get("Rotation", 0),
-                "target_rgb_matrix": dev.get("TargetRGBMatrix", 0),
-            }
-    
-    # Also store whitelist/blacklist for reference
-    whitelist = data.get("WhiteList", [])
-    blacklist = data.get("BlackList", [])
-    
-    print(f"[SIMHUB] Loaded {len(result)} devices from config (whitelist: {whitelist}, blacklist: {blacklist})")
-    return result
-
-
-# Cached SimHub devices (refreshed on each scan)
-_simhub_devices_cache: dict = {}
-
-
-def get_simhub_devices() -> list:
-    """
-    Return a list of all SimHub devices for UI dropdowns.
-    Each entry has uid, name, rgb_leds, display_modules, etc.
-    """
-    global _simhub_devices_cache
-    if not _simhub_devices_cache:
-        _simhub_devices_cache = load_simhub_devices()
-    
-    return [
-        {"uid": uid, **data}
-        for uid, data in _simhub_devices_cache.items()
-    ]
 
 # =========================
-# Load / Save
+# Config (ports.json)
 # =========================
 
-def load_config():
+def load_config() -> dict:
     if not CONFIG_FILE.exists():
         return {}
-
     try:
         text = CONFIG_FILE.read_text().strip()
         if not text:
             return {}
         return json.loads(text)
     except Exception as e:
-        print("[WARN] ports.json invalid, resetting:", e)
+        print(f"[CONFIG] Failed to load config: {e}")
         return {}
-
-saved = load_config()
-load_custom_serial_notes()  # Load local notes for Custom Serial devices
 
 
 def save_config():
+    CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     CONFIG_FILE.write_text(json.dumps(saved, indent=2))
 
-# =========================
-# Identify (Keyboard → SimHub)
-# =========================
-
-def identify_device(key, mode="identify"):
-    """
-    Trigger an identify or test pattern in SimHub via keyboard hotkeys.
-
-    Configure in SimHub:
-      - NumPad 9 → "Trigger Identify Blink"  (normal identify)
-      - NumPad 0 → "Trigger Test Pattern"   (richer test pattern)
-    """
-    device_id = saved.get(key, {}).get("identify_id")
-
-    if not isinstance(device_id, int):
-        print("[IDENTIFY] Missing numeric identify_id")
-        return
-
-    if mode == "test":
-        print(f"[AUTOMATION] TEST device ID {device_id}")
-        # SimHub action for test pattern is bound to NumPad 0
-        pyautogui.press("num0")
-    else:
-        print(f"[AUTOMATION] Identifying device ID {device_id}")
-        # SimHub action for normal identify is bound to NumPad 9
-        pyautogui.press("num9")
-    
-    
-    import requests
-from datetime import datetime
-
-SIMHUB_ARDUINO_URL = "http://127.0.0.1:8888/api/arduino"
-
-def fetch_simhub_devices():
-    """
-    Placeholder for future SimHub HTTP integration.
-    Your current SimHub setup has no HTTP API enabled,
-    so we simply return an empty list and avoid any errors.
-    """
-    return []
 
 # =========================
-# Install / Assign ID
+# Device Management
 # =========================
 
 def install_device(key):
@@ -378,32 +224,34 @@ def install_device(key):
             "group": "",
         }
 
-    if "identify_id" not in saved[key]:
+    if "device_id" not in saved[key]:
         used_ids = {
-            d.get("identify_id")
+            d.get("device_id")
             for d in saved.values()
-            if isinstance(d.get("identify_id"), int)
+            if isinstance(d.get("device_id"), int)
         }
 
         new_id = 1
         while new_id in used_ids:
             new_id += 1
 
-        saved[key]["identify_id"] = new_id
-        print(f"[INSTALL] Assigned identify_id {new_id} to {key}")
+        saved[key]["device_id"] = new_id
+        print(f"[INSTALL] Assigned device_id {new_id} to {key}")
 
     saved[key]["installed"] = True
     save_config()
     return True
 
+
 def bulk_install():
     devices = scan_ports()
     count = 0
     for d in devices:
-        if not d.get("installed") or not d.get("identify_id"):
+        if not d.get("installed") or not d.get("device_id"):
             if install_device(d["key"]):
                 count += 1
     return count
+
 
 # =========================
 # Scan USB Ports
@@ -425,29 +273,68 @@ def _format_duration(delta_seconds: int) -> str:
     return f"{days}d {hours}h"
 
 
+def make_device_key(port_info) -> str:
+    """Create a stable device key from USB VID/PID/serial."""
+    vid = getattr(port_info, "vid", None)
+    pid = getattr(port_info, "pid", None)
+    serial = getattr(port_info, "serial_number", "") or ""
+    
+    if vid and pid:
+        return f"{vid:04X}:{pid:04X}:{serial}"
+    return f"PORT:{port_info.device}"
+
+
 def scan_ports():
-    global _simhub_devices_cache
+    global _last_seen_ports
     
     results = []
     ports = list(serial.tools.list_ports.comports())
     now = datetime.utcnow()
     touched = False
 
-    # Refresh SimHub caches on each scan
-    _simhub_devices_cache = load_simhub_devices()
-    load_simhub_port_lists()
-    load_simhub_profiles()
-    load_custom_serial_notes()
+    # Track current ports for connect/disconnect detection
+    current_ports = set()
 
     for p in ports:
         key = make_device_key(p)
+        current_ports.add(key)
         entry = dict(saved.get(key, {}))
 
+        # Check if this is a new connection
+        was_connected = key in _last_seen_ports
+        
         # Ensure we have a stable "connected_since" timestamp per device
         connected_since = entry.get("connected_since")
-        if not connected_since:
+        if not connected_since or not was_connected:
             connected_since = now.isoformat()
             entry["connected_since"] = connected_since
+            saved[key] = entry
+            touched = True
+            
+            # Log connection event
+            if _last_seen_ports:  # Only log after first scan
+                add_history_event(
+                    "connected",
+                    p.device,
+                    entry.get("name", "New Device"),
+                    key,
+                    {"vid": getattr(p, "vid", None), "pid": getattr(p, "pid", None)}
+                )
+                update_port_stats(p.device, "connect", key)
+
+        # Track last known port
+        if entry.get("last_port") != p.device:
+            old_port = entry.get("last_port")
+            if old_port and old_port != p.device:
+                # Port change detected
+                add_history_event(
+                    "port_change",
+                    p.device,
+                    entry.get("name", "Device"),
+                    key,
+                    {"old_port": old_port, "new_port": p.device}
+                )
+            entry["last_port"] = p.device
             saved[key] = entry
             touched = True
 
@@ -469,65 +356,49 @@ def scan_ports():
         vid_hex = f"{vid:04X}" if isinstance(vid, int) else None
         pid_hex = f"{pid:04X}" if isinstance(pid, int) else None
 
-        # Check if this device is linked to a SimHub UID
-        linked_uid = entry.get("simhub_uid")
-        simhub_info = None
-        if linked_uid and linked_uid in _simhub_devices_cache:
-            simhub_info = _simhub_devices_cache[linked_uid]
-
         results.append({
             "key": key,
             "port": p.device,
-            "name": entry.get("name", "New Device"),
-            "role": entry.get("role", "Unassigned"),
-            "channel": entry.get("channel", 0),
-            "group": entry.get("group", ""),
-            "identify_id": entry.get("identify_id"),
-            "installed": entry.get("installed", False),
-            "status": "connected",
+            "name": entry.get("name", description or "Unknown Device"),
             "description": description,
             "manufacturer": manufacturer,
             "serial_number": serial_number,
-            "vid": vid_hex,
-            "pid": pid_hex,
+            "vid": vid,
+            "pid": pid,
+            "vid_hex": vid_hex,
+            "pid_hex": pid_hex,
+            "status": "connected",
+            "connected_since": connected_since,
             "connected_for": connected_for,
-            "simhub_uid": linked_uid,
-            "simhub": simhub_info,
-            "port_status": get_port_status(p.device),
+            "role": entry.get("role", "Unassigned"),
+            "tags": entry.get("tags", []),
+            "channel": entry.get("channel", 0),
+            "group": entry.get("group", ""),
+            "installed": entry.get("installed", False),
+            "device_id": entry.get("device_id"),
             "notes": entry.get("notes", ""),
         })
+
+    # Check for disconnected devices
+    for key in _last_seen_ports - current_ports:
+        device_entry = saved.get(key, {})
+        add_history_event(
+            "disconnected",
+            device_entry.get("last_port", "Unknown"),
+            device_entry.get("name", "Unknown Device"),
+            key
+        )
+        update_port_stats(device_entry.get("last_port", "Unknown"), "disconnect", key)
+
+    _last_seen_ports = current_ports
 
     if touched:
         save_config()
 
     return results
-    # =========================
-# Key Function
-# =========================
-    import re
 
-def make_device_key(port):
-    """
-    Generate a stable, canonical USB key.
-    """
-    vid = pid = sn = "UNKNOWN"
 
-    if port.hwid:
-        m = re.search(r"VID:PID=([0-9A-Fa-f]{4}):([0-9A-Fa-f]{4})", port.hwid)
-        if m:
-            vid, pid = m.groups()
-
-        sn_match = re.search(r"SER=([^ ]+)", port.hwid)
-        if sn_match:
-            sn = sn_match.group(1)
-
-    # Many CH340 clones ship without a real serial number; they all look identical.
-    # In that case we suffix the COM port so each physical device gets its own key.
-    if sn == "UNKNOWN":
-        try:
-            sn = f"NO-SN-{port.device}"
-        except Exception:
-            pass
-
-    return f"USB:VID={vid}:PID={pid}:SN={sn}"
-
+# Initialize
+saved = load_config()
+load_device_history()
+load_port_stats()

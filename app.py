@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, redirect, jsonify
 from datetime import datetime
 from pathlib import Path
 import json
-import subprocess
 import port_manager
 
 app = Flask(__name__)
@@ -14,8 +13,6 @@ app.jinja_env.auto_reload = True
 # =========================
 SESSION_START = datetime.now()
 SESSION_STATS = {
-    "identify_count": 0,
-    "test_count": 0,
     "devices_installed": 0,
     "profiles_loaded": 0,
     "profiles_saved": 0,
@@ -38,44 +35,11 @@ def get_session_uptime() -> str:
     days, hours = divmod(hours, 24)
     return f"{days}d {hours}h"
 
-SIMHUB_EXE_NAMES = ["SimHubWPF.exe", "SimHub.exe"]
-SIMHUB_PLUGIN_PATHS = [
-    # Common plugin folder locations
-    Path(r"C:\Program Files (x86)\SimHub\Plugins\ArduinoIdentifyPlugin.dll"),
-    Path(r"C:\Program Files\SimHub\Plugins\ArduinoIdentifyPlugin.dll"),
-    # Some setups drop the DLL directly next to SimHub.exe
-    Path(r"C:\Program Files (x86)\SimHub\ArduinoIdentifyPlugin.dll"),
-    Path(r"C:\Program Files\SimHub\ArduinoIdentifyPlugin.dll"),
-]
-
-
-def is_simhub_running() -> bool:
-    """Best-effort check to see if a SimHub process is running (Windows-only)."""
-    try:
-        out = subprocess.check_output(["tasklist"], encoding="utf-8", errors="ignore")
-    except Exception as e:
-        print("[WARN] Unable to check SimHub process:", e)
-        return False
-
-    out = out.lower()
-    return any(name.lower() in out for name in SIMHUB_EXE_NAMES)
-
-
-def is_plugin_installed() -> bool:
-    """Check common SimHub plugin locations for the ArduinoIdentify plugin DLL."""
-    for p in SIMHUB_PLUGIN_PATHS:
-        try:
-            if p.exists():
-                return True
-        except Exception:
-            continue
-    return False
-
 
 @app.route("/")
 def index():
     devices = port_manager.scan_ports()
-    # Sort by group then name for a bit more structure
+    # Sort by group then name for better organization
     devices = sorted(devices, key=lambda d: (d.get("group", "") or "", d.get("name", "") or ""))
 
     # Profile list (files in ./profiles/*.json)
@@ -84,33 +48,26 @@ def index():
     if profile_dir.exists():
         profiles = [p.stem for p in profile_dir.glob("*.json")]
 
-    # Get available SimHub devices for linking dropdown
-    simhub_devices = port_manager.get_simhub_devices()
+    # Get port analytics
+    analytics = port_manager.get_port_analytics()
     
-    # Get active LED profiles from SimHub
-    active_profiles = port_manager.get_active_profiles()
-    
-    # Get Custom Serial devices (e.g., boost gauge)
-    custom_serial_devices = port_manager.load_custom_serial_devices()
+    # Get connection timeline
+    timeline = port_manager.get_connection_timeline(20)
 
     stats = {
         "connected": sum(d["status"] == "connected" for d in devices),
-        "missing": 0,
         "total": len(devices),
         "last_scan": datetime.now().strftime("%H:%M:%S"),
-        # Live guardrails / environment checks
-        "simhub_running": is_simhub_running(),
-        "plugin_installed": is_plugin_installed(),
-        # Active LED profiles
-        "active_profiles": active_profiles,
         # Session stats
         "uptime": get_session_uptime(),
         "session_start": SESSION_START.strftime("%H:%M:%S"),
-        "identify_count": SESSION_STATS["identify_count"],
-        "test_count": SESSION_STATS["test_count"],
         "devices_installed": SESSION_STATS["devices_installed"],
         "profiles_loaded": SESSION_STATS["profiles_loaded"],
         "profiles_saved": SESSION_STATS["profiles_saved"],
+        # Analytics
+        "total_ports": analytics["total_ports"],
+        "active_ports": analytics["active_ports"],
+        "session_duration": analytics["session_duration"],
     }
 
     return render_template(
@@ -118,9 +75,10 @@ def index():
         devices=devices,
         stats=stats,
         profiles=profiles,
-        simhub_devices=simhub_devices,
-        custom_serial_devices=custom_serial_devices,
+        analytics=analytics,
+        timeline=timeline,
     )
+
 
 @app.route("/install/<path:key>", methods=["POST"])
 def install(key):
@@ -129,37 +87,11 @@ def install(key):
         SESSION_STATS["devices_installed"] += 1
     return ("OK", 200) if result else ("Error", 400)
 
+
 @app.route("/bulk_install", methods=["POST"])
 def bulk_install():
     count = port_manager.bulk_install()
     return jsonify({"message": f"Installed {count} devices", "count": count})
-
-@app.route("/identify/<path:key>", methods=["POST"])
-def identify(key):
-    # Guardrails: require SimHub + plugin
-    if not is_simhub_running():
-        return jsonify({"error": "SimHub does not appear to be running. Start SimHub and try again."}), 400
-    if not is_plugin_installed():
-        return jsonify({"error": "Arduino Identify plugin not found. Check your SimHub Plugins folder."}), 400
-
-    print(f"[IDENTIFY] Requested identify for {key}")
-    port_manager.identify_device(key, mode="identify")
-    SESSION_STATS["identify_count"] += 1
-    return ("", 204)
-
-
-@app.route("/test/<path:key>", methods=["POST"])
-def test(key):
-    # Guardrails: require SimHub + plugin
-    if not is_simhub_running():
-        return jsonify({"error": "SimHub does not appear to be running. Start SimHub and try again."}), 400
-    if not is_plugin_installed():
-        return jsonify({"error": "Arduino Identify plugin not found. Check your SimHub Plugins folder."}), 400
-
-    print(f"[TEST] Requested test pattern for {key}")
-    port_manager.identify_device(key, mode="test")
-    SESSION_STATS["test_count"] += 1
-    return ("", 204)
 
 
 @app.route("/update", methods=["POST"])
@@ -199,14 +131,6 @@ def update():
     if group_val:
         current["group"] = group_val
 
-    # SimHub UID link (optional – links this device to SimHub metadata)
-    simhub_uid = (request.form.get("simhub_uid") or "").strip()
-    if simhub_uid:
-        current["simhub_uid"] = simhub_uid
-    elif "simhub_uid" in current:
-        # Allow unlinking by clearing the field
-        del current["simhub_uid"]
-
     # Notes (freeform text for wiring info, etc.)
     notes_val = (request.form.get("notes") or "").strip()
     current["notes"] = notes_val
@@ -215,23 +139,6 @@ def update():
 
     print(f"[UPDATE] Saved settings for {key}: {current}")
     port_manager.save_config()
-    return redirect("/")
-
-
-@app.route("/update_custom_serial", methods=["POST"])
-def update_custom_serial():
-    """Update local notes/description for a Custom Serial device."""
-    port = request.form.get("port")
-    
-    if not port:
-        print("[WARN] Update custom serial called with empty port – ignoring")
-        return redirect("/")
-    
-    description = request.form.get("description", "").strip()
-    notes = request.form.get("notes", "").strip()
-    
-    port_manager.update_custom_serial_note(port, description=description, notes=notes)
-    
     return redirect("/")
 
 
@@ -277,6 +184,46 @@ def load_profile():
     SESSION_STATS["profiles_loaded"] += 1
     print(f"[PROFILE] Loaded profile '{name}'")
     return redirect("/")
+
+
+# =========================
+# Analytics & History API
+# =========================
+
+@app.route("/api/analytics")
+def api_analytics():
+    """Return port analytics data as JSON."""
+    return jsonify(port_manager.get_port_analytics())
+
+
+@app.route("/api/timeline")
+def api_timeline():
+    """Return connection timeline as JSON."""
+    limit = request.args.get("limit", 100, type=int)
+    return jsonify(port_manager.get_connection_timeline(limit))
+
+
+@app.route("/api/device_history/<path:key>")
+def api_device_history(key):
+    """Get port history for a specific device."""
+    return jsonify(port_manager.get_device_port_history(key))
+
+
+@app.route("/api/port_stats")
+def api_port_stats():
+    """Return detailed port statistics."""
+    return jsonify(port_manager._port_stats)
+
+
+@app.route("/api/export_history")
+def export_history():
+    """Export device history as JSON."""
+    history = port_manager.get_device_history(1000)
+    return jsonify({
+        "exported_at": datetime.now().isoformat(),
+        "total_events": len(history),
+        "events": history
+    })
 
 
 if __name__ == "__main__":

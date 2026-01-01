@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Arduino Port Manager</title>
+<title>Arduino Port History Manager</title>
 
 <style>
 :root{
@@ -49,999 +49,464 @@ header{
 
 /* Status pills */
 .pill{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:5px 10px;border-radius:6px;font-size:11px;font-weight:500;
-  background:var(--panel-elevated);border:1px solid var(--border);
-}
-.pill.ok{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
-.pill.bad{background:var(--danger-dim);border-color:var(--danger);color:var(--danger);}
-.pill.warn{background:var(--warning-dim);border-color:var(--warning);color:var(--warning);}
-.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
-
-/* Toolbar */
-.toolbar{
-  display:flex;gap:8px;padding:12px 16px;margin-bottom:16px;
-  background:var(--panel);border:1px solid var(--border);border-radius:10px;
-  align-items:center;flex-wrap:wrap;
-}
-.toolbar-section{display:flex;align-items:center;gap:6px;}
-.toolbar-divider{width:1px;height:24px;background:var(--border);margin:0 8px;}
-.toolbar label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-.toolbar select,.toolbar input[type="text"]{
-  background:var(--panel-alt);color:var(--text);
-  border:1px solid var(--border);border-radius:6px;
-  padding:6px 10px;font-size:12px;min-width:140px;
-}
-.toolbar button{
-  background:var(--panel-elevated);color:var(--text);
-  border:1px solid var(--border);border-radius:6px;
-  padding:6px 12px;font-size:11px;font-weight:500;cursor:pointer;
-  transition:all .15s ease;
-}
-.toolbar button:hover{background:var(--border);border-color:var(--text-secondary);}
-.toolbar button.primary{background:var(--accent);color:#000;border-color:var(--accent);}
-.toolbar button.primary:hover{filter:brightness(1.1);}
-
-/* Search */
-.search-box{
-  position:relative;margin-bottom:16px;
-}
-.search-box input{
-  width:100%;padding:10px 14px 10px 36px;border-radius:8px;
-  border:1px solid var(--border);background:var(--panel);
-  color:var(--text);font-size:13px;
-}
-.search-box::before{
-  content:"⌕";position:absolute;left:12px;top:50%;
-  transform:translateY(-50%);color:var(--muted);font-size:14px;
-}
-
-/* Grid */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
-  gap:12px;
-}
-
-/* Card */
-.card{
-  background:var(--panel);
+  padding:4px 10px;border-radius:12px;font-size:11px;
+  font-weight:600;text-transform:uppercase;letter-spacing:0.5px;
   border:1px solid var(--border);
-  border-radius:12px;
-  overflow:hidden;
-  transition:border-color .2s ease,box-shadow .2s ease;
 }
-.card:hover{border-color:var(--border-subtle);box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+.pill.connected{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
+.pill.total{background:var(--info-dim);color:var(--info);border-color:var(--info);}
+.pill.uptime{background:var(--panel-alt);color:var(--text-secondary);}
 
-.card-top{
-  display:flex;justify-content:space-between;align-items:flex-start;
-  padding:14px 16px 10px;border-bottom:1px solid var(--border-subtle);
+/* Theme toggle */
+.theme-toggle{
+  background:var(--panel-alt);border:1px solid var(--border);
+  border-radius:8px;padding:6px;cursor:pointer;color:var(--text);
+  font-size:18px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
 }
-.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:2px;}
-.card-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;}
-.card-tag{
-  font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500;
-  background:var(--panel-elevated);color:var(--text-secondary);
-  border:1px solid var(--border-subtle);
-}
-.card-tag.id{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
-.card-tag.port{font-family:"JetBrains Mono",monospace;background:var(--info-dim);color:var(--info);border-color:var(--info);}
-.card-tag.role{background:var(--panel-elevated);color:var(--text-secondary);}
+.theme-toggle:hover{background:var(--panel-elevated);}
 
+/* Main layout */
+.main{
+  display:grid;grid-template-columns:1fr 380px;gap:20px;
+  margin-bottom:20px;
+}
+@media (max-width: 1024px){
+  .main{grid-template-columns:1fr;}
+}
+
+/* Device cards */
+.devices{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;
+}
+.card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:16px;transition:all 0.2s ease;position:relative;
+}
+.card:hover{
+  border-color:var(--accent);transform:translateY(-2px);
+  box-shadow:0 8px 25px rgba(0,0,0,0.3);
+}
+.card-header{
+  display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;
+}
+.card-title{
+  font-weight:600;font-size:14px;color:var(--text);
+  margin-bottom:2px;word-break:break-word;
+}
+.card-subtitle{
+  font-size:11px;color:var(--muted);font-family:monospace;
+}
 .card-status{
-  display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+  width:8px;height:8px;background:var(--accent);border-radius:50%;
+  margin-top:2px;
 }
-.status-badge{
-  font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600;
-  text-transform:uppercase;letter-spacing:0.3px;
+.card-body{
+  font-size:12px;color:var(--text-secondary);line-height:1.4;
 }
-.status-badge.connected{background:var(--accent-dim);color:var(--accent);}
-.status-badge.missing{background:var(--danger-dim);color:var(--danger);}
-.port-status{font-size:9px;color:var(--muted);}
-.port-status.whitelisted{color:var(--accent);}
-.port-status.blacklisted{color:var(--danger);}
-
-.card-body{padding:12px 16px;}
-
-.hw-info{
-  display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;
-  font-size:11px;color:var(--text-secondary);
-  padding:8px 10px;background:var(--panel-alt);border-radius:6px;
-  margin-bottom:10px;
-}
-.hw-info span{display:flex;align-items:center;gap:4px;}
-.hw-info .label{color:var(--muted);font-size:10px;}
-
-.simhub-box{
-  padding:10px 12px;border-radius:8px;margin-bottom:10px;
-  border:1px solid var(--accent);background:var(--accent-dim);
-}
-.simhub-box.error{border-color:var(--danger);background:var(--danger-dim);}
-.simhub-header{
-  display:flex;align-items:center;gap:6px;margin-bottom:6px;
-  font-size:10px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.5px;color:var(--accent);
-}
-.simhub-box.error .simhub-header{color:var(--danger);}
-.simhub-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;font-size:11px;
-}
-.simhub-grid span{color:var(--text-secondary);}
-.simhub-grid strong{color:var(--text);font-weight:500;}
-.simhub-uid{font-size:9px;color:var(--muted);margin-top:6px;word-break:break-all;}
-
-.connection-time{font-size:10px;color:var(--muted);margin-bottom:8px;}
-
-/* Actions */
-.card-actions{
+.card-footer{
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);
   display:flex;justify-content:space-between;align-items:center;
-  padding:10px 16px;background:var(--panel-alt);
-  border-top:1px solid var(--border-subtle);
-}
-.card-actions .left{font-size:10px;color:var(--muted);}
-.card-actions .right{display:flex;gap:6px;}
-
-button{
-  border:none;padding:6px 12px;border-radius:5px;
-  font-weight:500;cursor:pointer;font-size:11px;
-  transition:all .15s ease;
-}
-.btn-install{background:var(--info);color:white;}
-.btn-install:hover{filter:brightness(1.15);}
-.btn-identify{background:var(--panel-elevated);color:var(--text);border:1px solid var(--border);}
-.btn-identify:hover{background:var(--border);}
-.btn-identify.active{background:var(--danger);color:white;border-color:var(--danger);animation:pulse .6s infinite;}
-.btn-test{background:var(--panel-elevated);color:var(--text);border:1px solid var(--border);}
-.btn-test:hover{background:var(--border);}
-.btn-edit{background:var(--accent);color:#000;font-weight:600;}
-.btn-edit:hover{filter:brightness(1.1);}
-
-/* Footer */
-.main{flex:1 0 auto;}
-.footer{
-  margin-top:24px;padding:16px 0;
-  border-top:1px solid var(--border);
   font-size:11px;color:var(--muted);
+}
+.card-actions{
+  display:flex;gap:6px;margin-top:12px;
+}
+.btn{
+  padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;
+  border:1px solid var(--border);background:var(--panel-alt);
+  color:var(--text);cursor:pointer;transition:all 0.2s ease;
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.btn:hover{
+  background:var(--panel-elevated);border-color:var(--accent);
+  transform:translateY(-1px);
+}
+.btn.primary{
+  background:var(--accent);color:white;border-color:var(--accent);
+}
+.btn.primary:hover{
+  background:#16a34a;border-color:#16a34a;
+}
+
+/* Sidebar */
+.sidebar{
+  display:flex;flex-direction:column;gap:20px;
+}
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:16px;
+}
+.panel-title{
+  font-weight:600;font-size:13px;color:var(--text);
+  margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+.panel-content{
+  font-size:12px;color:var(--text-secondary);
+}
+.stat-row{
   display:flex;justify-content:space-between;align-items:center;
-  flex-wrap:wrap;gap:12px;
+  padding:4px 0;border-bottom:1px solid var(--border-subtle);
 }
-.footer a{color:var(--accent);text-decoration:none;}
-.footer a:hover{text-decoration:underline;}
-.footer-btns{display:flex;gap:4px;}
-.footer-btn{
-  background:var(--panel-elevated);color:var(--text-secondary);
-  border:1px solid var(--border);border-radius:5px;
-  padding:4px 10px;font-size:10px;cursor:pointer;
+.stat-row:last-child{border-bottom:none;}
+.stat-label{color:var(--muted);}
+.stat-value{font-weight:600;color:var(--text);}
+
+/* Timeline */
+.timeline{
+  max-height:300px;overflow-y:auto;
 }
-.footer-btn:hover{background:var(--border);color:var(--text);}
-
-/* Tooltip */
-.tooltip{position:relative;display:inline-block;}
-.tooltip-bubble{
-  position:absolute;bottom:130%;right:0;
-  background:var(--panel-elevated);color:var(--text);
-  padding:8px 10px;border-radius:6px;border:1px solid var(--border);
-  white-space:nowrap;font-size:10px;
-  opacity:0;pointer-events:none;
-  transform:translateY(4px);transition:all .15s ease;z-index:200;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+.timeline-item{
+  display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-subtle);
+  font-size:11px;
 }
-.tooltip:hover .tooltip-bubble{opacity:1;transform:translateY(0);}
+.timeline-item:last-child{border-bottom:none;}
+.timeline-time{
+  color:var(--muted);font-family:monospace;min-width:60px;
+}
+.timeline-content{
+  flex:1;
+}
+.timeline-event{
+  font-weight:500;color:var(--text);
+}
+.timeline-details{
+  color:var(--text-secondary);margin-top:2px;
+}
+.event-connected{color:var(--accent);}
+.event-disconnected{color:var(--danger);}
+.event-port_change{color:var(--warning);}
 
-@keyframes pulse{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}
+/* Analytics */
+.analytics-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.analytics-item{
+  background:var(--panel-alt);padding:8px;border-radius:6px;
+  text-align:center;
+}
+.analytics-value{
+  font-size:16px;font-weight:700;color:var(--accent);
+}
+.analytics-label{
+  font-size:10px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:0.5px;margin-top:2px;
+}
 
-/* Modal */
+/* Forms */
+.form-group{
+  margin-bottom:12px;
+}
+.form-label{
+  display:block;font-size:11px;font-weight:500;color:var(--text);
+  margin-bottom:4px;
+}
+.form-input{
+  width:100%;padding:8px 10px;border:1px solid var(--border);
+  border-radius:6px;background:var(--panel-alt);color:var(--text);
+  font-size:12px;font-family:inherit;
+}
+.form-input:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);
+}
+.form-select{
+  width:100%;padding:8px 10px;border:1px solid var(--border);
+  border-radius:6px;background:var(--panel-alt);color:var(--text);
+  font-size:12px;font-family:inherit;
+}
 .modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
-  display:none;align-items:center;justify-content:center;z-index:100;
-  backdrop-filter:blur(4px);
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center;
 }
-.modal.open{display:flex}
-.modal-box{
-  background:var(--panel);padding:24px;border-radius:12px;
-  border:1px solid var(--border);width:380px;
-  max-height:85vh;overflow-y:auto;
-  box-shadow:0 20px 40px rgba(0,0,0,0.5);
+.modal.active{display:flex;}
+.modal-content{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:20px;max-width:400px;width:90%;max-height:80vh;overflow-y:auto;
 }
-.modal-box h2{font-size:18px;font-weight:600;color:var(--accent);margin-bottom:16px;}
-.modal-box input,.modal-box select{
-  width:100%;margin-bottom:8px;padding:10px 12px;border-radius:6px;
-  background:var(--panel-alt);color:var(--text);border:1px solid var(--border);
-  font-size:13px;
+.modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;
 }
-.modal-box input:focus,.modal-box select:focus{outline:none;border-color:var(--accent);}
-.field-help{font-size:10px;color:var(--muted);margin:-4px 0 12px;line-height:1.4;}
+.modal-title{
+  font-size:16px;font-weight:600;color:var(--text);
+}
+.modal-close{
+  background:none;border:none;color:var(--muted);font-size:20px;
+  cursor:pointer;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+}
+.modal-close:hover{color:var(--text);}
+.modal-footer{
+  display:flex;gap:8px;justify-content:flex-end;margin-top:16px;
+}
 
-/* Custom Serial Section */
-.custom-serial-section{
-  margin-bottom:20px;padding:16px;
-  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+/* Loading */
+.loading{
+  text-align:center;padding:40px;color:var(--muted);
 }
-.custom-serial-section h3{
-  font-size:13px;font-weight:600;color:var(--warning);margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;
+.loading::after{
+  content:"";display:inline-block;width:20px;height:20px;
+  border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 1s linear infinite;margin-left:8px;
 }
-.custom-serial-grid{display:flex;gap:12px;flex-wrap:wrap;}
-.serial-card{
-  background:var(--panel-alt);border:1px solid var(--border-subtle);border-radius:8px;
-  padding:12px;min-width:280px;flex:1;max-width:400px;
-}
-.serial-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.serial-card-title{font-size:13px;font-weight:600;color:var(--text);}
-.serial-status{
-  font-size:9px;padding:3px 8px;border-radius:4px;font-weight:600;text-transform:uppercase;
-}
-.serial-status.connected{background:var(--accent-dim);color:var(--accent);}
-.serial-status.disconnected{background:var(--danger-dim);color:var(--danger);}
-.serial-status.disabled{background:var(--border);color:var(--muted);}
-.serial-details{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:11px;color:var(--text-secondary);}
-.serial-details .label{color:var(--muted);font-size:10px;}
-.serial-error{margin-top:8px;padding:6px 8px;background:var(--danger-dim);border-radius:4px;font-size:10px;color:var(--danger);}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-/* Enhanced status indicators */
-.status-badge.connected::before{content:"✓ ";font-weight:bold;}
-@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);}50%{box-shadow:0 0 0 4px rgba(34,197,94,0);}}
-.card.healthy{animation:pulse-green 2s ease-in-out 1;}
-
-/* Stats grid */
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
-.stat-box{
-  background:var(--panel-alt);border:1px solid var(--border-subtle);border-radius:8px;
-  padding:16px;text-align:center;
-}
-.stat-value{font-size:24px;font-weight:700;color:var(--accent);}
-.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:4px;}
-
+/* Scrollbar */
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--muted);}
 </style>
 </head>
+<body data-theme="dark">
 
-<body>
-
-<div class="main">
 <header>
   <div class="header-left">
-    <h1>Arduino Port Manager</h1>
-    <div class="subtitle">SimHub Device Registry & Identifier</div>
+    <h1>🔌 Port History Manager</h1>
+    <div class="subtitle">Track Arduino connections and port usage over time</div>
   </div>
   <div class="header-right">
-    <div class="pill ok"><span class="dot"></span>{{ stats.connected }} Online</div>
-    {% if stats.missing > 0 %}
-    <div class="pill bad"><span class="dot"></span>{{ stats.missing }} Offline</div>
-    {% endif %}
-    <div class="pill {{ 'ok' if stats.simhub_running else 'bad' }}" title="SimHub process status">
-      <span class="dot"></span>{{ 'SimHub' if stats.simhub_running else 'No SimHub' }}
-    </div>
-    <div class="pill {{ 'ok' if stats.plugin_installed else 'bad' }}" title="ArduinoIdentifyPlugin.dll">
-      <span class="dot"></span>{{ 'Plugin OK' if stats.plugin_installed else 'No Plugin' }}
-    </div>
+    <span class="pill connected">{{ stats.connected }} connected</span>
+    <span class="pill total">{{ stats.total_ports }} ports</span>
+    <span class="pill uptime">{{ stats.uptime }}</span>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
   </div>
 </header>
 
-<div class="toolbar">
-  <div class="toolbar-section">
-    <label>Profile</label>
-    <form method="post" action="/profile/load" style="display:flex;gap:6px;align-items:center;">
-      <select name="name">
-        <option value="">Select…</option>
-        {% for p in profiles %}
-          <option value="{{ p }}">{{ p }}</option>
-        {% endfor %}
-      </select>
-      <button type="submit">Load</button>
+<div class="main">
+  <section class="devices-section">
+    <div class="devices">
+      {% for device in devices %}
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">{{ device.name }}</div>
+            <div class="card-subtitle">{{ device.port }}</div>
+          </div>
+          <div class="card-status"></div>
+        </div>
+        <div class="card-body">
+          <div><strong>VID:PID:</strong> {{ device.vid_hex or "N/A" }}:{{ device.pid_hex or "N/A" }}</div>
+          <div><strong>Connected for:</strong> {{ device.connected_for }}</div>
+          <div><strong>Role:</strong> {{ device.role }}</div>
+          {% if device.group %}
+          <div><strong>Group:</strong> {{ device.group }}</div>
+          {% endif %}
+          {% if device.notes %}
+          <div><strong>📝 Notes:</strong> {{ device.notes }}</div>
+          {% endif %}
+        </div>
+        <div class="card-footer">
+          <span>{{ device.manufacturer or "Unknown" }}</span>
+          <span>{{ device.connected_for }}</span>
+        </div>
+        <div class="card-actions">
+          {% if not device.installed %}
+          <form method="POST" action="/install/{{ device.key }}" style="display:inline;">
+            <button type="submit" class="btn primary">Install</button>
+          </form>
+          {% endif %}
+          <button class="btn" onclick="editDevice('{{ device.key }}')">Edit</button>
+          <button class="btn" onclick="viewHistory('{{ device.key }}')">History</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <!-- Analytics Panel -->
+    <div class="panel">
+      <div class="panel-title">📊 Analytics</div>
+      <div class="panel-content">
+        <div class="analytics-grid">
+          <div class="analytics-item">
+            <div class="analytics-value">{{ analytics.total_ports }}</div>
+            <div class="analytics-label">Total Ports</div>
+          </div>
+          <div class="analytics-item">
+            <div class="analytics-value">{{ analytics.active_ports }}</div>
+            <div class="analytics-label">Active</div>
+          </div>
+        </div>
+        {% if analytics.most_used_ports %}
+        <div style="margin-top:12px;">
+          <div style="font-weight:500;margin-bottom:4px;">Most Used Ports:</div>
+          {% for port, count in analytics.most_used_ports[:3] %}
+          <div class="stat-row">
+            <span class="stat-label">{{ port }}</span>
+            <span class="stat-value">{{ count }}×</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Timeline Panel -->
+    <div class="panel">
+      <div class="panel-title">📅 Recent Activity</div>
+      <div class="panel-content">
+        <div class="timeline">
+          {% for event in timeline %}
+          <div class="timeline-item">
+            <div class="timeline-time">{{ event.time.split('T')[1].split('.')[0][:5] }}</div>
+            <div class="timeline-content">
+              <div class="timeline-event event-{{ event.type }}">
+                {% if event.type == 'connected' %}🔌 Connected
+                {% elif event.type == 'disconnected' %}🔌 Disconnected
+                {% elif event.type == 'port_change' %}🔄 Port Change
+                {% endif %}
+              </div>
+              <div class="timeline-details">{{ event.device_name }} on {{ event.port }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Panel -->
+    <div class="panel">
+      <div class="panel-title">⚡ Actions</div>
+      <div class="panel-content">
+        <form method="POST" action="/bulk_install" style="margin-bottom:8px;">
+          <button type="submit" class="btn primary" style="width:100%;">Install All Devices</button>
+        </form>
+        <button class="btn" onclick="refreshPage()" style="width:100%;">🔄 Refresh</button>
+        <button class="btn" onclick="exportHistory()" style="width:100%;">📥 Export History</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Edit Device Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Edit Device</div>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <form method="POST" action="/update">
+      <input type="hidden" id="editKey" name="key">
+      
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" name="name" id="editName" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select name="role" id="editRole" class="form-select">
+          <option value="Unassigned">Unassigned</option>
+          <option value="LED">LED</option>
+          <option value="Gauge">Gauge</option>
+          <option value="Buttons">Buttons</option>
+          <option value="Display">Display</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Tags (comma separated)</label>
+        <input type="text" name="tags" id="editTags" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Group</label>
+        <input type="text" name="group" id="editGroup" class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Channel</label>
+        <input type="number" name="channel" id="editChannel" class="form-input" min="0" value="0">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" id="editNotes" class="form-input" rows="3"></textarea>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('editModal')">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
     </form>
   </div>
-  <div class="toolbar-section">
-    <form method="post" action="/profile/save" style="display:flex;gap:6px;align-items:center;">
-      <input type="text" name="name" placeholder="Profile name…" style="width:130px;">
-      <button type="submit">Save</button>
-    </form>
-  </div>
-  <div class="toolbar-divider"></div>
-  <button class="primary" onclick="bulkInstall()" title="Assign IDs to all uninstalled devices">Bulk Install</button>
-</div>
-
-<div class="search-box">
-  <input placeholder="Filter devices by name, port, role…" oninput="filterCards(this.value)">
-</div>
-
-{% if custom_serial_devices %}
-<div class="custom-serial-section">
-  <h3>
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    Custom Serial Devices
-    <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:8px;">{{ custom_serial_devices|length }} device{{ 's' if custom_serial_devices|length != 1 else '' }}</span>
-  </h3>
-  <div class="custom-serial-grid">
-    {% for cs in custom_serial_devices %}
-    <div class="serial-card">
-      <div class="serial-card-header">
-        <div>
-          <span class="serial-card-title">{{ cs.name }}</span>
-          {% if cs.expression_type %}
-          <div style="font-size:10px;color:var(--accent);margin-top:2px;">{{ cs.expression_type }}</div>
-          {% endif %}
-        </div>
-        {% if not cs.is_enabled %}
-        <span class="serial-status disabled">Disabled</span>
-        {% elif cs.is_connecting %}
-        <span class="serial-status" style="background:var(--warning-dim);color:var(--warning);">Connecting</span>
-        {% elif cs.is_connected %}
-        <span class="serial-status connected">Connected</span>
-        {% else %}
-        <span class="serial-status disconnected">Disconnected</span>
-        {% endif %}
-      </div>
-      <div class="serial-details">
-        <span><span class="label">Port</span> {{ cs.port }}</span>
-        <span><span class="label">Baud</span> {{ cs.baud_rate }}</span>
-        <span><span class="label">Update Rate</span> {{ cs.update_frequency }}Hz</span>
-        <span><span class="label">Startup Delay</span> {{ cs.startup_delay }}ms</span>
-        <span><span class="label">DTR</span> {{ '✓' if cs.dtr_enable else '✗' }}</span>
-        <span><span class="label">RTS</span> {{ '✓' if cs.rts_enable else '✗' }}</span>
-        <span><span class="label">Auto-Reconnect</span> {{ '✓' if cs.auto_reconnect else '✗' }}</span>
-        <span><span class="label">Logging</span> {{ '✓' if cs.log_incoming else '✗' }}</span>
-      </div>
-      {% if cs.has_expression or cs.has_on_connect or cs.has_on_disconnect %}
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-subtle);font-size:10px;color:var(--text-secondary);display:flex;gap:12px;">
-        {% if cs.has_expression %}
-        <span style="color:var(--accent);">✓ Expression</span>
-        {% endif %}
-        {% if cs.has_on_connect %}
-        <span>✓ OnConnect</span>
-        {% endif %}
-        {% if cs.has_on_disconnect %}
-        <span>✓ OnDisconnect</span>
-        {% endif %}
-        {% if cs.is_frozen %}
-        <span style="color:var(--danger);">⚠ Frozen</span>
-        {% endif %}
-      </div>
-      {% endif %}
-      {% if cs.custom_description or cs.notes %}
-      <div style="margin-top:8px;padding:8px;background:var(--panel);border-radius:6px;border:1px solid var(--border-subtle);">
-        {% if cs.custom_description %}
-        <div style="font-size:11px;color:var(--text);margin-bottom:4px;"><strong>{{ cs.custom_description }}</strong></div>
-        {% endif %}
-        {% if cs.notes %}
-        <div style="font-size:10px;color:var(--muted);white-space:pre-wrap;">{{ cs.notes }}</div>
-        {% endif %}
-      </div>
-      {% endif %}
-      {% if cs.last_error %}
-      <div class="serial-error">
-        <strong>Last Error:</strong> {{ cs.last_error }}<br>
-        <span style="font-size:9px;">{{ cs.last_error_date }}</span>
-      </div>
-      {% endif %}
-      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
-        <button class="btn-edit" style="background:var(--warning);font-size:10px;padding:4px 10px;" 
-          data-port="{{ cs.port }}"
-          data-desc="{{ cs.custom_description|default('', true) }}"
-          data-notes="{{ cs.notes|default('', true) }}"
-          onclick="openCsModal(this.dataset.port, this.dataset.desc, this.dataset.notes)">Edit Notes</button>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-<div class="grid">
-{% for d in devices %}
-  <div class="card" data-search="{{ d.name }} {{ d.port }} {{ d.role }} {{ d.identify_id }} {{ d.channel }} {{ d.group }}">
-
-    <div class="card-top">
-      <div>
-        <div class="card-title">{{ d.name if d.name else 'Unnamed Arduino' }}</div>
-        <div class="card-meta">
-          <span class="card-tag port">{{ d.port }}</span>
-          {% if d.identify_id %}
-          <span class="card-tag id">ID {{ d.identify_id }}</span>
-          {% endif %}
-          {% if d.role and d.role != 'Unassigned' %}
-          <span class="card-tag role">{{ d.role }}</span>
-          {% endif %}
-          {% if d.channel and d.channel != 0 %}
-          <span class="card-tag">CH{{ d.channel }}</span>
-          {% endif %}
-        </div>
-      </div>
-      <div class="card-status">
-        <span class="status-badge {{ 'connected' if d.status=='connected' else 'missing' }}">
-          {{ d.status }}
-        </span>
-        {% if d.port_status and d.port_status != 'unlisted' %}
-        <span class="port-status {{ d.port_status }}">
-          {{ '✓ Whitelisted' if d.port_status == 'whitelisted' else '✗ Blacklisted' }}
-        </span>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="card-body">
-      {% if d.description or d.manufacturer or d.vid or d.pid %}
-      <div class="hw-info">
-        {% if d.description %}
-        <span><span class="label">Device</span> {{ d.description }}</span>
-        {% endif %}
-        {% if d.manufacturer %}
-        <span><span class="label">Maker</span> {{ d.manufacturer }}</span>
-        {% endif %}
-        {% if d.vid or d.pid %}
-        <span><span class="label">USB</span> {{ d.vid or '----' }}:{{ d.pid or '----' }}</span>
-        {% endif %}
-        {% if d.connected_for %}
-        <span><span class="label">Uptime</span> {{ d.connected_for }}</span>
-        {% endif %}
-      </div>
-      {% endif %}
-
-      {% if d.simhub %}
-      <div class="simhub-box">
-        <div class="simhub-header">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          SimHub Linked
-        </div>
-        <div class="simhub-grid">
-          {% if d.simhub.simhub_name %}
-          <span>Name: <strong>{{ d.simhub.simhub_name }}</strong></span>
-          {% endif %}
-          {% if d.simhub.rgb_leds %}
-          <span>RGB LEDs: <strong>{{ d.simhub.rgb_leds }}</strong></span>
-          {% endif %}
-          {% if d.simhub.display_modules %}
-          <span>Displays: <strong>{{ d.simhub.display_modules }}</strong></span>
-          {% endif %}
-          {% if d.simhub.motors %}
-          <span>Motors: <strong>{{ d.simhub.motors }}</strong></span>
-          {% endif %}
-          {% if d.simhub.read_buttons %}
-          <span>Buttons: <strong>Yes</strong></span>
-          {% endif %}
-          <span>Status: <strong style="color:{{ 'var(--danger)' if d.simhub.disabled else 'var(--accent)' }}">{{ 'Disabled' if d.simhub.disabled else 'Active' }}</strong></span>
-        </div>
-        <div class="simhub-uid">{{ d.simhub_uid }}</div>
-      </div>
-      {% elif d.simhub_uid %}
-      <div class="simhub-box error">
-        <div class="simhub-header">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          SimHub UID Not Found
-        </div>
-        <div style="font-size:10px;">Device configured but not in SimHub config</div>
-      </div>
-      {% endif %}
-
-      {% if not d.simhub and d.connected_for and not (d.description or d.manufacturer or d.vid) %}
-      <div class="connection-time">Connected for {{ d.connected_for }}</div>
-      {% endif %}
-
-      {% if d.notes %}
-      <div style="margin-top:10px;padding:8px 10px;background:var(--panel-alt);border-radius:6px;border:1px solid var(--border-subtle);">
-        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">📝 Notes</div>
-        <div style="font-size:11px;color:var(--text-secondary);white-space:pre-wrap;">{{ d.notes }}</div>
-      </div>
-      {% endif %}
-    </div>
-
-    <div class="card-actions">
-      <div class="left">
-        {% if d.group %}{{ d.group }}{% else %}No group{% endif %}
-      </div>
-      <div class="right">
-        {% if not d.installed %}
-        <button class="btn-install" title="Assign an Identify ID" onclick="installDevice('{{ d.key }}')">Install</button>
-        {% endif %}
-
-        {% if d.role == 'Gauge' %}
-        <button class="btn-identify" disabled style="opacity:.35;cursor:not-allowed;" title="Gauge devices are controlled by SimHub directly">Identify</button>
-        <button class="btn-test" disabled style="opacity:.35;cursor:not-allowed;" title="Gauge devices are controlled by SimHub directly">Test</button>
-        {% else %}
-        <button class="btn-identify" title="Blink to identify (NumPad 9)" onclick="identify(this,'{{ d.key }}',{{ d.identify_id or 0 }})">Identify</button>
-        <button class="btn-test" title="Test pattern (NumPad 0)" onclick="testDevice('{{ d.key }}',{{ d.identify_id or 0 }})">Test</button>
-        {% endif %}
-
-        <button class="btn-edit" 
-          data-key="{{ d.key }}"
-          data-name="{{ d.name }}"
-          data-tags="{{ d.tags|join(', ') }}"
-          data-role="{{ d.role }}"
-          data-channel="{{ d.channel or 0 }}"
-          data-group="{{ d.group or '' }}"
-          data-shuid="{{ d.simhub_uid or '' }}"
-          data-notes="{{ d.notes|default('', true) }}"
-          onclick="openModal(this.dataset.key, this.dataset.name, this.dataset.tags, this.dataset.role, this.dataset.channel, this.dataset.group, this.dataset.shuid, this.dataset.notes)">Edit</button>
-      </div>
-    </div>
-  </div>
-{% endfor %}
-</div>
-
-<div class="footer">
-  <div>
-    <span>Built by <strong>Matthew Wicks</strong></span> · 
-    <span style="color:var(--accent)">JOML – Just One More Lap</span> · 
-    <a href="https://www.youtube.com/@JOMLRacing" target="_blank">YouTube</a> · 
-    <a href="https://github.com/meanstackofdoom/simhub-arduino-manager" target="_blank">GitHub</a>
-    <span class="footer-btns" style="margin-left:12px;">
-      <button class="footer-btn" onclick="openStats()">📊 Stats</button>
-      <button class="footer-btn" onclick="openAbout()">About</button>
-      <button class="footer-btn" onclick="openPlanned()">Roadmap</button>
-      <button class="footer-btn" onclick="openChangelog()">Changelog</button>
-    </span>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="tooltip">
-      <button class="footer-btn" style="width:24px;height:24px;padding:0;border-radius:50%;" aria-label="Help">?</button>
-      <div class="tooltip-bubble">NumPad 9 = Identify · NumPad 0 = Test · Auto-refresh 15s</div>
-    </div>
-    <button id="theme-toggle" class="footer-btn">Dark</button>
-    <span style="font-size:10px;color:var(--muted);">v0.2.2 · {{ stats.last_scan }}</span>
-  </div>
-</div>
-
-<div class="modal" id="about-modal">
-  <div class="modal-box">
-    <h2 style="color:var(--accent);margin:0 0 10px">About</h2>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4">
-      This Arduino Port Manager keeps a stable JSON registry of your SimHub Arduinos
-      (name, role, channel, group, identify ID, and notes), and drives a custom SimHub plugin
-      to blink or test each device on demand.
-    </p>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4">
-      Built with Python, Flask, pyserial, and a SimHub C# plugin so you can manage
-      multiple rigs and Arduinos without fighting COM ports.
-    </p>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:8px;">
-      <strong>Key features:</strong> SimHub config integration, device linking, session stats,
-      device notes for wiring info, and Custom Serial device annotations.
-    </p>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
-      <strong>Guardrails:</strong> Header shows SimHub status and plugin presence.
-      Identify/Test will report errors if SimHub or plugin is missing.
-    </p>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-top:4px;">
-      NumPad 9/0 hotkey bindings can't be auto-detected – if not mapped, Identify/Test may silently fail.
-    </p>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-      <button type="button"
-              onclick="closeAbout()"
-              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="planned-modal">
-  <div class="modal-box">
-    <h2 style="color:var(--accent);margin:0 0 10px">Roadmap</h2>
-    <p style="font-size:12px;color:var(--accent);margin-bottom:6px;"><strong>0.2.x – Device Health &amp; Metadata ✅</strong></p>
-    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li style="color:var(--accent);">✅ SimHub config integration (LED count, modules, motors)</li>
-      <li style="color:var(--accent);">✅ Device linking via SimHub Unique ID</li>
-      <li style="color:var(--accent);">✅ Custom Serial device info (boost gauges, etc.)</li>
-      <li style="color:var(--accent);">✅ Session statistics tracking</li>
-      <li style="color:var(--accent);">✅ Device notes (wiring info, pin assignments)</li>
-      <li style="color:var(--accent);">✅ Custom Serial annotations</li>
-      <li>Live device health / heartbeat indicators</li>
-      <li>RX / TX counters (requires SimHub live API)</li>
-    </ul>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:6px;margin-top:10px;"><strong>0.3.x – Power User Features</strong></p>
-    <ul style="font-size:12px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li>Improved multi-profile management (per-rig presets, cloning)</li>
-      <li>Export / import configurations</li>
-      <li>Multi-rig support</li>
-      <li>Optional background polling service</li>
-    </ul>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-      <button type="button"
-              onclick="closePlanned()"
-              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="changelog-modal">
-  <div class="modal-box" style="max-height:70vh;overflow:auto;">
-    <h2 style="color:var(--accent);margin:0 0 10px">Changelog</h2>
-    <p style="font-size:12px;color:var(--accent);line-height:1.4;margin-bottom:4px;">
-      <strong>v0.2.2</strong> – Device Notes &amp; Custom Serial Annotations
-    </p>
-    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
-      <li>Notes field for Arduino devices (wiring info, pins)</li>
-      <li>Custom Serial annotations (descriptions, calibration values)</li>
-      <li>Edit Notes modal for Custom Serial devices</li>
-    </ul>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
-      <strong>v0.2.1</strong> – Session Stats &amp; Custom Serial Integration
-    </p>
-    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
-      <li>Session statistics modal (uptime, clicks, installs)</li>
-      <li>Custom Serial device info from SimHub config</li>
-    </ul>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
-      <strong>v0.2.0</strong> – SimHub Config Integration &amp; UI Redesign
-    </p>
-    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;margin-bottom:10px;">
-      <li>SimHub config reader (SerialDashPlugin.json)</li>
-      <li>Device linking via SimHub Unique ID</li>
-      <li>Complete UI redesign with professional dark theme</li>
-    </ul>
-    <p style="font-size:12px;color:var(--muted);line-height:1.4;margin-bottom:4px;">
-      <strong>v0.1.0</strong> – Initial Release
-    </p>
-    <ul style="font-size:11px;color:var(--muted);padding-left:18px;margin-top:0;">
-      <li>Initial SimHub Arduino Manager dashboard</li>
-      <li>Device detection, Identify/Test, profiles</li>
-    </ul>
-    <p style="font-size:10px;color:var(--muted);margin-top:10px;">
-      See <code>CHANGELOG.md</code> for full history.
-    </p>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-      <button type="button"
-              onclick="closeChangelog()"
-              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="stats-modal">
-  <div class="modal-box" style="width:420px;">
-    <h2 style="color:var(--accent);margin:0 0 16px;display:flex;align-items:center;gap:8px;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-      Session Statistics
-    </h2>
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="stat-value">{{ stats.uptime }}</div>
-        <div class="stat-label">Uptime</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">{{ stats.connected }}</div>
-        <div class="stat-label">Devices Online</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value">{{ stats.total }}</div>
-        <div class="stat-label">Total Devices</div>
-      </div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="stat-value" style="color:var(--info);">{{ stats.identify_count }}</div>
-        <div class="stat-label">Identify Clicks</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value" style="color:var(--warning);">{{ stats.test_count }}</div>
-        <div class="stat-label">Test Clicks</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-value" style="color:var(--accent);">{{ stats.devices_installed }}</div>
-        <div class="stat-label">Installs</div>
-      </div>
-    </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:12px;padding:10px;background:var(--panel-alt);border-radius:6px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span>Session started:</span>
-        <span style="color:var(--text);">{{ stats.session_start }}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span>Last scan:</span>
-        <span style="color:var(--text);">{{ stats.last_scan }}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span>Profiles loaded:</span>
-        <span style="color:var(--text);">{{ stats.profiles_loaded }}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;">
-        <span>Profiles saved:</span>
-        <span style="color:var(--text);">{{ stats.profiles_saved }}</span>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-      <button type="button"
-              onclick="closeStats()"
-              style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:12px;cursor:pointer;">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="cs-modal">
-<form class="modal-box" method="post" action="/update_custom_serial">
-  <h2 style="color:var(--warning);margin:0 0 15px;display:flex;align-items:center;gap:8px;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    Custom Serial Notes
-  </h2>
-  <input type="hidden" name="port" id="cs-port">
-  <input name="description" id="cs-description" placeholder="Description (e.g. Boost Gauge for Audi)">
-  <div class="field-help">
-    Custom description for this serial device (stored locally, not in SimHub).
-  </div>
-  <textarea name="notes" id="cs-notes" rows="4" placeholder="Notes (e.g. PWM range 10-245, vacuum floor 57)" style="resize:vertical;"></textarea>
-  <div class="field-help">
-    Freeform notes – calibration values, wiring info, expression details, etc.
-  </div>
-  <div style="display:flex;gap:10px">
-    <button type="button"
-            style="background:#444;flex:1"
-            onclick="closeCsModal()">
-      Cancel
-    </button>
-    <button type="submit"
-            style="background:var(--warning);color:#000;flex:1">
-      Save
-    </button>
-  </div>
-</form>
-</div>
-
-<div class="modal" id="modal">
-<form class="modal-box" method="post" action="/update">
-  <h2 style="color:var(--accent);margin:0 0 15px">
-    Device Settings
-  </h2>
-  <input type="hidden" name="key" id="m-key">
-  <input name="name" id="m-name" placeholder="Device name (e.g. Desk LEDs)">
-  <div class="field-help">
-    Friendly name shown as the card title (e.g. <em>Under Monitor</em>, <em>Wheel Base</em>).
-  </div>
-  <input name="tags" id="m-tags" placeholder="Tags (desk, dash, left)">
-  <div class="field-help">
-    Comma-separated labels used for filtering/search (e.g. <em>desk, dash, left</em>).
-  </div>
-  <select name="role" id="m-role">
-    <option value="Unassigned">Unassigned</option>
-    <option value="LED">LED</option>
-    <option value="Gauge">Gauge</option>
-    <option value="Buttons">Buttons</option>
-    <option value="Other">Other</option>
-  </select>
-  <div class="field-help">
-    How this Arduino is used in SimHub (LED strip, gauge, buttons, other).
-  </div>
-  <select name="channel" id="m-channel">
-    <option value="0">Channel 0 – All</option>
-    <option value="1">Channel 1 – Left</option>
-    <option value="2">Channel 2 – Right</option>
-    <option value="3">Channel 3 – Dash</option>
-  </select>
-  <div class="field-help">
-    Logical zone your firmware uses. <strong>0</strong> = whole device, other channels = per-zone effects.
-  </div>
-  <input name="group" id="m-group" placeholder="Group (Desk, Wheel, Rig)">
-  <div class="field-help">
-    High-level rig location to help group devices (Desk, Wheel, Rig, Dash, etc.).
-  </div>
-  <select name="simhub_uid" id="m-simhub-uid">
-    <option value="">— No SimHub Link —</option>
-    {% for sh in simhub_devices %}
-      <option value="{{ sh.uid }}">
-        {{ sh.simhub_name or 'Unnamed' }} · {{ sh.rgb_leds }} LEDs · {{ sh.display_modules }} displays
-      </option>
-    {% endfor %}
-  </select>
-  <div class="field-help">
-    Link to a SimHub device to pull metadata (LED count, modules, motors, etc.).
-  </div>
-  <textarea name="notes" id="m-notes" rows="3" placeholder="Notes (e.g. Wires: D4, D5, D7, D8)" style="resize:vertical;"></textarea>
-  <div class="field-help">
-    Freeform notes – wiring info, pin assignments, physical location, etc.
-  </div>
-  <div style="display:flex;gap:10px">
-    <button type="button"
-            style="background:#444;flex:1"
-            onclick="closeModal()">
-      Cancel
-    </button>
-    <button type="submit"
-            style="background:var(--accent);flex:1">
-      Save
-    </button>
-  </div>
-</form>
 </div>
 
 <script>
-const modal = document.getElementById("modal");
-const aboutModal = document.getElementById("about-modal");
-const plannedModal = document.getElementById("planned-modal");
-const changelogModal = document.getElementById("changelog-modal");
-const statsModal = document.getElementById("stats-modal");
-const m_key = document.getElementById("m-key");
-const m_name = document.getElementById("m-name");
-const m_tags = document.getElementById("m-tags");
-const m_role = document.getElementById("m-role");
-const m_channel = document.getElementById("m-channel");
-const m_group = document.getElementById("m-group");
-const m_simhub_uid = document.getElementById("m-simhub-uid");
-const m_notes = document.getElementById("m-notes");
-const themeToggle = document.getElementById("theme-toggle");
-const csModal = document.getElementById("cs-modal");
-const cs_port = document.getElementById("cs-port");
-const cs_description = document.getElementById("cs-description");
-const cs_notes = document.getElementById("cs-notes");
-
-function installDevice(key){
-  fetch(`/install/${key}`,{method:"POST"})
-    .then(r=>r.ok?alert("Installed"):alert("Install failed"));
+// Theme toggle
+function toggleTheme(){
+  const body = document.body;
+  const btn = document.querySelector('.theme-toggle');
+  const isDark = body.dataset.theme === 'dark';
+  
+  body.dataset.theme = isDark ? 'light' : 'dark';
+  btn.textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('theme', body.dataset.theme);
 }
 
-function identify(btn,key,id){
-  if(!id){
-    alert("No Identify ID assigned.\nInstall the device first.");
-    return;
-  }
+// Load saved theme
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.body.dataset.theme = savedTheme;
+document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
-  btn.classList.add("active");
-  btn.disabled = true;
-  btn.innerText = `Blinking ID ${id}…`;
+// Device data for editing
+const deviceData = {{ devices | tojson }};
 
-  fetch(`/identify/${key}`, { method: "POST" })
-    .then(r => {
-      if (!r.ok) {
-        return r.json().then(data => {
-          alert(data.error || "Identify failed. Check SimHub and plugin status.");
-        });
-      }
+function editDevice(key){
+  const device = deviceData.find(d => d.key === key);
+  if (!device) return;
+  
+  document.getElementById('editKey').value = device.key;
+  document.getElementById('editName').value = device.name || '';
+  document.getElementById('editRole').value = device.role || 'Unassigned';
+  document.getElementById('editTags').value = (device.tags || []).join(', ');
+  document.getElementById('editGroup').value = device.group || '';
+  document.getElementById('editChannel').value = device.channel || 0;
+  document.getElementById('editNotes').value = device.notes || '';
+  
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeModal(modalId){
+  document.getElementById(modalId).classList.remove('active');
+}
+
+function refreshPage(){
+  window.location.reload();
+}
+
+function exportHistory(){
+  fetch('/api/export_history')
+    .then(response => response.json())
+    .then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `port_history_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     })
-    .catch(() => {
-      alert("Identify failed. Check SimHub and plugin status.");
+    .catch(error => console.error('Export failed:', error));
+}
+
+function viewHistory(key){
+  fetch(`/api/device_history/${key}`)
+    .then(response => response.json())
+    .then(data => {
+      alert(`Device History:\n\n${data.map(e => 
+        `${e.time.split('T')[0]} ${e.time.split('T')[1].split('.')[0]} - ${e.type.toUpperCase()}: ${e.port}`
+      ).join('\n')}`);
     })
-    .finally(() => {
-      setTimeout(() => {
-        btn.classList.remove("active");
-        btn.disabled = false;
-        btn.innerText = "Identify";
-      }, 3500);
-    });
+    .catch(error => console.error('History fetch failed:', error));
 }
 
-function testDevice(key,id){
-  if(!id){
-    alert("No Identify ID assigned.\nInstall the device first.");
-    return;
-  }
-
-  fetch(`/test/${key}`, { method: "POST" })
-    .then(r => {
-      if (!r.ok) {
-        return r.json().then(data => {
-          alert(data.error || "Test pattern failed. Check SimHub and plugin status.");
-        });
-      }
-    })
-    .catch(() => {
-      alert("Test pattern failed. Check SimHub and plugin status.");
-    });
-}
-
-function openModal(k,n,t,r,ch,g,shuid,notes){
-  modal.classList.add("open");
-  m_key.value = k;
-  m_name.value = n || "";
-  m_tags.value = t || "";
-  m_role.value = r || "Unassigned";
-  m_channel.value = (ch || 0);
-  m_group.value = g || "";
-  m_simhub_uid.value = shuid || "";
-  m_notes.value = notes || "";
-}
-
-function openCsModal(port, desc, notes) {
-  csModal.classList.add("open");
-  cs_port.value = port || "";
-  cs_description.value = desc || "";
-  cs_notes.value = notes || "";
-}
-function closeCsModal() {
-  csModal.classList.remove("open");
-}
-function closeModal(){
-  modal.classList.remove("open");
-}
-function filterCards(v){
-  v=v.toLowerCase();
-  document.querySelectorAll(".card").forEach(c=>{
-    c.style.display=
-      c.dataset.search.toLowerCase().includes(v)?"":"none";
-  });
-}
-setInterval(()=>{
-  const anyModalOpen = modal.classList.contains("open") ||
-    aboutModal.classList.contains("open") ||
-    plannedModal.classList.contains("open") ||
-    changelogModal.classList.contains("open") ||
-    statsModal.classList.contains("open") ||
-    (csModal && csModal.classList.contains("open"));
-  if(!anyModalOpen) location.reload();
-},15000);
-
-function bulkInstall() {
-    if (!confirm("This will assign IDs to all uninstalled devices. Continue?")) return;
-    
-    fetch('/bulk_install', { method: "POST" })
-        .then(r => r.json())
-        .then(data => {
-            alert(data.message);
-            location.reload();
-        });
-}
-
-function openAbout(){
-  if(aboutModal){
-    aboutModal.classList.add("open");
-  }
-}
-function closeAbout(){
-  if(aboutModal){
-    aboutModal.classList.remove("open");
-  }
-}
-
-function openPlanned(){
-  if(plannedModal){
-    plannedModal.classList.add("open");
-  }
-}
-function closePlanned(){
-  if(plannedModal){
-    plannedModal.classList.remove("open");
-  }
-}
-
-function openChangelog(){
-  if(changelogModal){
-    changelogModal.classList.add("open");
-  }
-}
-function closeChangelog(){
-  if(changelogModal){
-    changelogModal.classList.remove("open");
-  }
-}
-
-function openStats(){
-  if(statsModal){
-    statsModal.classList.add("open");
-  }
-}
-function closeStats(){
-  if(statsModal){
-    statsModal.classList.remove("open");
-  }
-}
-
-function applyTheme(theme){
-  document.body.setAttribute("data-theme", theme);
-  if(themeToggle){
-    themeToggle.textContent = theme === "light" ? "Light" : "Dark";
-  }
-  try{
-    localStorage.setItem("theme", theme);
-  }catch(e){}
-}
-
-(function initTheme(){
-  let theme = "dark";
-  try{
-    theme = localStorage.getItem("theme") || "dark";
-  }catch(e){}
-  applyTheme(theme);
-
-  if(themeToggle){
-    themeToggle.onclick = function(){
-      const current = document.body.getAttribute("data-theme") || "dark";
-      const next = current === "light" ? "dark" : "light";
-      applyTheme(next);
-    };
-  }
-})();
+// Auto-refresh every 30 seconds
+setTimeout(() => {
+  window.location.reload();
+}, 30000);
 </script>
 
 </body>

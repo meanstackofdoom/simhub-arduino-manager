@@ -1,6 +1,2 @@
 Flask
 pyserial
-pyautogui
-requests
-
-

@@ -1,0 +1,11 @@
+{
+  "COM8": {
+    "first_seen": "2026-01-01T17:11:42.467891",
+    "last_seen": "2026-01-01T17:11:42.468897",
+    "connection_count": 0,
+    "disconnection_count": 1,
+    "total_connection_time": 0,
+    "devices": [],
+    "most_recent_device": null
+  }
+}
